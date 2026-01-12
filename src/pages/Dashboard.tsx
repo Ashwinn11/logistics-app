@@ -120,7 +120,7 @@ const Dashboard: React.FC = () => {
                 </div>
 
                 {/* Stats Grid */}
-                {user?.role === 'Clearance Manager, Admin, Administrator, Adminstrator Assistant, Clearance Assistant, Accountant, Assistant Accountant' ? (
+                {user?.role === 'Clearance Manager, Administrator, Adminstrator Assistant, Clearance Manager Assistant, Accountant, Accountant Assistant' ? (
                     /* Clearance Manager Dashboard View */
                     <div className="space-y-8">
                         {/* Team Snapshot */}
@@ -248,36 +248,6 @@ const Dashboard: React.FC = () => {
                                 <Package className="w-6 h-6 text-emerald-600 group-hover:text-white transition-colors" />
                             </div>
                         </Link>
-                    </div>
-                )}
-
-                {/* Legacy Charts (Hide for Clearance Agent to reduce clutter or Keep? Prompt says "Team Insights" header present for future) */}
-                {user?.role !== 'Clearance Agent' && (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Weekly Performance */}
-                        <div className="glass-card p-6">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4">Weekly Performance</h3>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <LineChart data={data?.weeklyData || []}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                                    <XAxis dataKey="day" stroke="#6b7280" />
-                                    <YAxis stroke="#6b7280" />
-                                    <Tooltip
-                                        contentStyle={{
-                                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                            backdropFilter: 'blur(10px)',
-                                            borderRadius: '12px',
-                                            border: '1px solid rgba(229, 231, 235, 0.5)'
-                                        }}
-                                    />
-                                    <Line type="monotone" dataKey="shipments" stroke="#3b82f6" strokeWidth={3} dot={{ fill: '#3b82f6', r: 4 }} />
-                                    <Line type="monotone" dataKey="deliveries" stroke="#10b981" strokeWidth={3} dot={{ fill: '#10b981', r: 4 }} />
-                                </LineChart>
-                            </ResponsiveContainer>
-                        </div>
-
-                        {/* Shipment Status Distribution */}
-
                     </div>
                 )}
 
