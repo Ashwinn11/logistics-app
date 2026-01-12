@@ -11,13 +11,10 @@ const pool = new Pool({
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 2000,
     // SSL configuration is often required for CockroachDB (especially cloud/serverless)
-    // The driver will try to use SSL if specified in the connection string,
-    // but explicit fallback can be useful.
-    ...(process.env.DATABASE_URL?.includes('sslmode') && {
-        ssl: {
-            rejectUnauthorized: false // Adjust based on your certificate needs
-        }
-    })
+    // SSL configuration
+    ssl: process.env.NODE_ENV === 'production' || process.env.DATABASE_URL?.includes('sslmode')
+        ? { rejectUnauthorized: false }
+        : undefined
 });
 
 // Test connection
