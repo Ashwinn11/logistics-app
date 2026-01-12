@@ -67,18 +67,6 @@ const CreateShipment: React.FC = () => {
         setLoading(true);
 
         try {
-            // Validation: Mandatory Documents
-            if (!documents.invoice) {
-                alert('Invoice is required.');
-                setLoading(false);
-                return;
-            }
-            if (!documents.packing_list) {
-                alert('Packing List is required.');
-                setLoading(false);
-                return;
-            }
-
             // Validation: Dates
             if (new Date(formData.date) > new Date(formData.expected_delivery_date)) {
                 alert('Pickup date cannot be after expected delivery date');
@@ -115,8 +103,8 @@ const CreateShipment: React.FC = () => {
     };
 
     const getTransportDocLabel = () => {
-        if (formData.transport_mode === 'Sea') return 'Bill of Lading (BL) *';
-        if (formData.transport_mode === 'Air') return 'Airway Bill (AWB) *';
+        if (formData.transport_mode === 'Sea') return 'Bill of Lading (BL)';
+        if (formData.transport_mode === 'Air') return 'Airway Bill (AWB)';
         return 'Transport Document';
     };
 
@@ -339,7 +327,7 @@ const CreateShipment: React.FC = () => {
 
                             {/* Invoice Upload */}
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-gray-700">Commercial Invoice *</label>
+                                <label className="block text-sm font-medium text-gray-700">Commercial Invoice (Optional)</label>
                                 {!documents.invoice ? (
                                     <div className="border border-dashed border-gray-300 rounded-lg p-3 text-center hover:bg-gray-50 transition-colors">
                                         <input
@@ -366,7 +354,7 @@ const CreateShipment: React.FC = () => {
 
                             {/* Packing List Upload */}
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-gray-700">Packing List *</label>
+                                <label className="block text-sm font-medium text-gray-700">Packing List (Optional)</label>
                                 {!documents.packing_list ? (
                                     <div className="border border-dashed border-gray-300 rounded-lg p-3 text-center hover:bg-gray-50 transition-colors">
                                         <input
