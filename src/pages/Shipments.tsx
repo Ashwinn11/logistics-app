@@ -12,8 +12,7 @@ import {
     AlertCircle,
     Eye,
     Loader2,
-    Trash,
-    Undo
+    Trash
 } from 'lucide-react';
 
 const Shipments: React.FC = () => {
@@ -24,52 +23,36 @@ const Shipments: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [shipmentToDelete, setShipmentToDelete] = useState<any>(null);
-    const [pendingDeletion, setPendingDeletion] = useState<any | null>(null);
-    const deletionTimer = React.useRef<any>(null);
-    const pendingDeletionRef = React.useRef<string | null>(null);
+
 
     const handleDeleteClick = (shipment: any) => {
         setShipmentToDelete(shipment);
         setDeleteModalOpen(true);
     };
 
-    const handleConfirmDelete = () => {
+    const handleConfirmDelete = async () => {
         if (!shipmentToDelete) return;
 
-        // Optimistically remove from list
         const itemToDelete = shipmentToDelete;
+        // Optimistically remove from list
         setShipments(prev => prev.filter(s => s.id !== itemToDelete.id));
-        setPendingDeletion(itemToDelete);
-        pendingDeletionRef.current = itemToDelete.id;
-
-        // Close modal
         setDeleteModalOpen(false);
         setShipmentToDelete(null);
 
-        // Set timer for actual deletion
-        if (deletionTimer.current) clearTimeout(deletionTimer.current);
-        deletionTimer.current = setTimeout(async () => {
-            try {
-                await shipmentsAPI.delete(itemToDelete.id);
-                setPendingDeletion(null);
-                pendingDeletionRef.current = null;
-            } catch (error) {
-                console.error('Failed to delete shipment', error);
-            }
-        }, 10000); // 10 seconds
+        try {
+            await shipmentsAPI.delete(itemToDelete.id);
+            // Success - no further action needed as item is already removed from UI
+        } catch (error) {
+            console.error('Failed to delete shipment', error);
+            alert('Failed to delete shipment. Please try again.');
+            // Revert optimistic update
+            setShipments(prev => [...prev, itemToDelete]);
+        }
     };
 
-    const handleUndo = () => {
-        if (deletionTimer.current) {
-            clearTimeout(deletionTimer.current);
-            deletionTimer.current = null;
-        }
-        if (pendingDeletion) {
-            setShipments(prev => [pendingDeletion, ...prev]);
-            setPendingDeletion(null);
-            pendingDeletionRef.current = null;
-        }
-    };
+    // Removed handleUndo as we are deleting immediately now
+
+
 
     useEffect(() => {
         const fetchShipments = async (silent = false) => {
@@ -80,9 +63,7 @@ const Shipments: React.FC = () => {
                     status: filterStatus
                 });
 
-                // Filter out any item that is currently pending deletion
-                const filteredData = response.data.filter((s: any) => s.id !== pendingDeletionRef.current);
-                setShipments(filteredData);
+                setShipments(response.data);
             } catch (error) {
                 console.error('Error fetching shipments:', error);
             } finally {
@@ -97,8 +78,6 @@ const Shipments: React.FC = () => {
 
         // Poll for updates every 5 seconds
         const intervalId = setInterval(() => {
-            // Only poll if we aren't specifically filtering/searching deeply (optional, but good UX)
-            // Here we just poll always for simplicity so updates appear even if filtering
             fetchShipments(true); // silent = true
         }, 5000);
 
@@ -347,21 +326,7 @@ const Shipments: React.FC = () => {
                         </div>
                     </div>
                 )}
-                {/* Undo Toast */}
-                {pendingDeletion && (
-                    <div className="fixed bottom-6 right-6 z-50 animate-fade-in-up">
-                        <div className="bg-gray-900 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-4">
-                            <span className="text-sm">Shipment deleted</span>
-                            <button
-                                onClick={handleUndo}
-                                className="text-sm font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
-                            >
-                                <Undo className="w-4 h-4" />
-                                Undo
-                            </button>
-                        </div>
-                    </div>
-                )}
+
             </div>
         </Layout>
     );
