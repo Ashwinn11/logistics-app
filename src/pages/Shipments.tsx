@@ -26,6 +26,7 @@ const Shipments: React.FC = () => {
     const [shipmentToDelete, setShipmentToDelete] = useState<any>(null);
     const [pendingDeletion, setPendingDeletion] = useState<any | null>(null);
     const deletionTimer = React.useRef<any>(null);
+    const pendingDeletionRef = React.useRef<string | null>(null);
 
     const handleDeleteClick = (shipment: any) => {
         setShipmentToDelete(shipment);
@@ -39,6 +40,7 @@ const Shipments: React.FC = () => {
         const itemToDelete = shipmentToDelete;
         setShipments(prev => prev.filter(s => s.id !== itemToDelete.id));
         setPendingDeletion(itemToDelete);
+        pendingDeletionRef.current = itemToDelete.id;
 
         // Close modal
         setDeleteModalOpen(false);
@@ -50,6 +52,7 @@ const Shipments: React.FC = () => {
             try {
                 await shipmentsAPI.delete(itemToDelete.id);
                 setPendingDeletion(null);
+                pendingDeletionRef.current = null;
             } catch (error) {
                 console.error('Failed to delete shipment', error);
             }
@@ -64,6 +67,7 @@ const Shipments: React.FC = () => {
         if (pendingDeletion) {
             setShipments(prev => [pendingDeletion, ...prev]);
             setPendingDeletion(null);
+            pendingDeletionRef.current = null;
         }
     };
 
@@ -75,7 +79,10 @@ const Shipments: React.FC = () => {
                     search: searchTerm,
                     status: filterStatus
                 });
-                setShipments(response.data);
+
+                // Filter out any item that is currently pending deletion
+                const filteredData = response.data.filter((s: any) => s.id !== pendingDeletionRef.current);
+                setShipments(filteredData);
             } catch (error) {
                 console.error('Error fetching shipments:', error);
             } finally {
