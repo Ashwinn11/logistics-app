@@ -416,50 +416,7 @@ const ShipmentDetails: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Vehicle & Driver Info */}
-                        {/* Vehicle & Driver Info - Only show if assigned or editing */}
-                        {(isEditing || shipment.driver || shipment.vehicle_id) && (
-                            <div className="glass-card p-6">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                                    <Truck className="w-5 h-5 text-primary-600 mr-2" />
-                                    Vehicle & Driver
-                                </h3>
-                                <div className="space-y-4">
-                                    {(isEditing || shipment.driver) && (
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-500 mb-1">Assigned Driver</label>
-                                            {isEditing ? (
-                                                <input
-                                                    name="driver"
-                                                    value={formData.driver || ''}
-                                                    onChange={handleInputChange}
-                                                    className="input-field"
-                                                    placeholder="Driver Name"
-                                                />
-                                            ) : (
-                                                <p className="font-semibold text-gray-900">{shipment.driver}</p>
-                                            )}
-                                        </div>
-                                    )}
-                                    {(isEditing || shipment.vehicle_id) && (
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-500 mb-1">Vehicle ID / Plate</label>
-                                            {isEditing ? (
-                                                <input
-                                                    name="vehicle_id"
-                                                    value={formData.vehicle_id || ''}
-                                                    onChange={handleInputChange}
-                                                    className="input-field"
-                                                    placeholder="Vehicle Plate No."
-                                                />
-                                            ) : (
-                                                <p className="font-semibold text-gray-900">{shipment.vehicle_id}</p>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
+
 
                         {/* Documents */}
                         <div className="glass-card p-6">
