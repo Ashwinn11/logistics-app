@@ -68,9 +68,9 @@ const Shipments: React.FC = () => {
     };
 
     useEffect(() => {
-        const fetchShipments = async () => {
+        const fetchShipments = async (silent = false) => {
             try {
-                setLoading(true);
+                if (!silent) setLoading(true);
                 const response = await shipmentsAPI.getAll({
                     search: searchTerm,
                     status: filterStatus
@@ -79,16 +79,26 @@ const Shipments: React.FC = () => {
             } catch (error) {
                 console.error('Error fetching shipments:', error);
             } finally {
-                setLoading(false);
+                if (!silent) setLoading(false);
             }
         };
 
-        // Debounce search
+        // Initial fetch and debounce search
         const timeoutId = setTimeout(() => {
             fetchShipments();
         }, 500);
 
-        return () => clearTimeout(timeoutId);
+        // Poll for updates every 5 seconds
+        const intervalId = setInterval(() => {
+            // Only poll if we aren't specifically filtering/searching deeply (optional, but good UX)
+            // Here we just poll always for simplicity so updates appear even if filtering
+            fetchShipments(true); // silent = true
+        }, 5000);
+
+        return () => {
+            clearTimeout(timeoutId);
+            clearInterval(intervalId);
+        };
     }, [searchTerm, filterStatus]);
 
     const getStatusColor = (status: string) => {

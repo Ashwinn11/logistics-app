@@ -19,6 +19,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         // Check for existing session
@@ -27,6 +28,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (savedUser && token) {
             setUser(JSON.parse(savedUser));
         }
+        setLoading(false);
     }, []);
 
     const login = async (username: string, password: string): Promise<boolean> => {
@@ -49,6 +51,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.removeItem('user');
         localStorage.removeItem('token');
     };
+
+    if (loading) {
+        return <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        </div>;
+    }
 
     return (
         <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user }}>

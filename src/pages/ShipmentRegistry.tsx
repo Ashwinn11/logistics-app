@@ -29,10 +29,20 @@ const ShipmentRegistry: React.FC = () => {
 
     useEffect(() => {
         loadJobs();
+        // Poll for updates every 5 seconds
+        const intervalId = setInterval(() => {
+            // Only poll if we aren't currently searching (to avoid UI jumpiness during typing)
+            if (!searchTerm) {
+                // Pass true to silentLoading to avoid showing the full spinner on every poll
+                loadJobs(true);
+            }
+        }, 5000);
+
+        return () => clearInterval(intervalId);
     }, [searchTerm]);
 
-    const loadJobs = async () => {
-        setLoading(true);
+    const loadJobs = async (silent = false) => {
+        if (!silent) setLoading(true);
         try {
             const response = await shipmentsAPI.getAll({ search: searchTerm });
             // Mock some data if missing for UI testing
