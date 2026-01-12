@@ -249,14 +249,18 @@ const Shipments: React.FC = () => {
                                             {new Date(shipment.date).toLocaleDateString()}
                                         </p>
                                     </div>
-                                    <div>
-                                        <p className="text-xs text-gray-500">Driver</p>
-                                        <p className="text-sm font-semibold text-gray-900">{shipment.driver || 'Unassigned'}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-gray-500">Vehicle</p>
-                                        <p className="text-sm font-semibold text-gray-900">{shipment.vehicle_id || 'Unassigned'}</p>
-                                    </div>
+                                    {shipment.driver && (
+                                        <div>
+                                            <p className="text-xs text-gray-500">Driver</p>
+                                            <p className="text-sm font-semibold text-gray-900">{shipment.driver}</p>
+                                        </div>
+                                    )}
+                                    {shipment.vehicle_id && (
+                                        <div>
+                                            <p className="text-xs text-gray-500">Vehicle</p>
+                                            <p className="text-sm font-semibold text-gray-900">{shipment.vehicle_id}</p>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Actions */}
