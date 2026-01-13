@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 
 import ConsigneesSettings from './settings/ConsigneesSettings';
+import CustomersSettings from './settings/CustomersSettings';
+import ExportersSettings from './settings/ExportersSettings';
 
 const Settings: React.FC = () => {
     const [activeTab, setActiveTab] = useState('Consignees');
@@ -27,21 +29,9 @@ const Settings: React.FC = () => {
             case 'Consignees':
                 return <ConsigneesSettings />;
             case 'Customers':
-                return (
-                    <div className="flex-1 p-8 flex flex-col items-center justify-center text-center">
-                        <Users className="w-12 h-12 text-gray-300 mb-4" />
-                        <h2 className="text-xl font-semibold text-gray-900">Customers Settings</h2>
-                        <p className="text-gray-500 mt-2">Manage your customer database here.</p>
-                    </div>
-                );
+                return <CustomersSettings />;
             case 'Exporters':
-                return (
-                    <div className="flex-1 p-8 flex flex-col items-center justify-center text-center">
-                        <Briefcase className="w-12 h-12 text-gray-300 mb-4" />
-                        <h2 className="text-xl font-semibold text-gray-900">Exporters Settings</h2>
-                        <p className="text-gray-500 mt-2">Manage exporter profiles and details.</p>
-                    </div>
-                );
+                return <ExportersSettings />;
             case 'Vehicles':
                 return (
                     <div className="flex-1 p-8 flex flex-col items-center justify-center text-center">

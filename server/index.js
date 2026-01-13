@@ -10,6 +10,8 @@ import logsRoutes from './routes/logs.js';
 import deliveryNoteRoutes from './routes/delivery_notes.js';
 import invoiceRoutes from './routes/invoices.js';
 import consigneeRoutes from './routes/consignees.js';
+import customerRoutes from './routes/customers.js';
+import exporterRoutes from './routes/exporters.js';
 
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -50,6 +52,8 @@ app.use('/api/logs', logsRoutes);
 app.use('/api/delivery-notes', deliveryNoteRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/consignees', consigneeRoutes);
+app.use('/api/customers', customerRoutes);
+app.use('/api/exporters', exporterRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

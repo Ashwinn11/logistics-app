@@ -128,4 +128,26 @@ export const consigneesAPI = {
     }),
 };
 
+// Customers API
+export const customersAPI = {
+    getAll: () => api.get('/customers'),
+    create: (data: any) => api.post('/customers', data),
+    update: (id: string, data: any) => api.put(`/customers/${id}`, data),
+    delete: (id: string) => api.delete(`/customers/${id}`),
+    import: (formData: FormData) => api.post('/customers/import', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+};
+
+// Exporters API
+export const exportersAPI = {
+    getAll: () => api.get('/exporters'),
+    create: (data: any) => api.post('/exporters', data),
+    update: (id: string, data: any) => api.put(`/exporters/${id}`, data),
+    delete: (id: string) => api.delete(`/exporters/${id}`),
+    import: (formData: FormData) => api.post('/exporters/import', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+};
+
 export default api;
