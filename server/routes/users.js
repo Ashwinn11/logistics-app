@@ -246,7 +246,8 @@ router.post('/:id/photo', upload.single('photo'), async (req, res) => {
         res.json({ photoUrl });
     } catch (error) {
         console.error('Error uploading photo:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        // Helper to get formatted error
+        res.status(500).json({ error: 'Upload failed: ' + (error.message || 'Unknown error') });
     }
 });
 
