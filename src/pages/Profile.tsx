@@ -1,18 +1,22 @@
 import React, { useState } from 'react';
 import Layout from '../components/Layout';
-import { Monitor } from 'lucide-react';
+import { Monitor, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { usersAPI, authAPI } from '../services/api';
 
 const Profile: React.FC = () => {
     const { user } = useAuth();
+    const [loading, setLoading] = useState(false);
+    const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-    // State
+    // Profile State
     const [profile, setProfile] = useState({
-        name: user?.username || 'Thiru',
-        email: 'thiru@skyone.mv',
+        name: user?.username || '',
+        email: user?.email || '',
         photo: null as string | null
     });
 
+    // Password State
     const [password, setPassword] = useState({
         current: '',
         new: '',
@@ -27,13 +31,71 @@ const Profile: React.FC = () => {
         setPassword({ ...password, [e.target.name]: e.target.value });
     };
 
+    const handleSaveProfile = async () => {
+        if (!user) return;
+        setLoading(true);
+        setMessage(null);
+        try {
+            await usersAPI.update(user.id, {
+                username: profile.name,
+                email: profile.email
+            });
+            setMessage({ type: 'success', text: 'Profile updated successfully.' });
+        } catch (error: any) {
+            console.error('Profile update error:', error);
+            setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to update profile.' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSavePassword = async () => {
+        if (password.new !== password.confirm) {
+            setMessage({ type: 'error', text: 'New passwords do not match.' });
+            return;
+        }
+        if (!password.current || !password.new) {
+            setMessage({ type: 'error', text: 'Please fill in all password fields.' });
+            return;
+        }
+
+        setLoading(true);
+        setMessage(null);
+        try {
+            await authAPI.changePassword({
+                oldPassword: password.current,
+                newPassword: password.new
+            });
+            setMessage({ type: 'success', text: 'Password changed successfully.' });
+            setPassword({ current: '', new: '', confirm: '' });
+        } catch (error: any) {
+            console.error('Password change error:', error);
+            setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to change password.' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <Layout>
             <div className="max-w-7xl mx-auto space-y-10 animate-fade-in pb-12">
 
-                {/* Page Title */}
+                {/* Check user context availability */}
+                {!user && (
+                    <div className="bg-yellow-50 p-4 rounded-lg text-yellow-800">
+                        Loading user profile...
+                    </div>
+                )}
+
+                {/* Page Title & Feedback */}
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
+                    {message && (
+                        <div className={`mt-4 p-3 rounded-lg flex items-center gap-2 ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                            {message.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+                            {message.text}
+                        </div>
+                    )}
                 </div>
 
                 {/* Section 1: Profile Information */}
@@ -56,7 +118,7 @@ const Profile: React.FC = () => {
                                             <img src={profile.photo} alt="Profile" className="w-full h-full object-cover" />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white text-2xl font-bold">
-                                                {profile.name.charAt(0).toUpperCase()}
+                                                {profile.name?.charAt(0).toUpperCase() || 'U'}
                                             </div>
                                         )}
                                     </div>
@@ -96,7 +158,12 @@ const Profile: React.FC = () => {
                             </div>
                         </div>
                         <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
-                            <button className="px-4 py-2 bg-gray-900 text-white text-xs font-bold rounded shadow-sm hover:bg-black transition-colors uppercase tracking-wide">
+                            <button
+                                onClick={handleSaveProfile}
+                                disabled={loading}
+                                className="px-4 py-2 bg-gray-900 text-white text-xs font-bold rounded shadow-sm hover:bg-black transition-colors uppercase tracking-wide disabled:opacity-50 flex items-center gap-2"
+                            >
+                                {loading && <Loader2 className="w-3 h-3 animate-spin" />}
                                 Save
                             </button>
                         </div>
@@ -148,7 +215,12 @@ const Profile: React.FC = () => {
                             </div>
                         </div>
                         <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
-                            <button className="px-4 py-2 bg-gray-900 text-white text-xs font-bold rounded shadow-sm hover:bg-black transition-colors uppercase tracking-wide">
+                            <button
+                                onClick={handleSavePassword}
+                                disabled={loading}
+                                className="px-4 py-2 bg-gray-900 text-white text-xs font-bold rounded shadow-sm hover:bg-black transition-colors uppercase tracking-wide disabled:opacity-50 flex items-center gap-2"
+                            >
+                                {loading && <Loader2 className="w-3 h-3 animate-spin" />}
                                 Save
                             </button>
                         </div>

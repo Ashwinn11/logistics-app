@@ -5,7 +5,9 @@ import { authAPI } from '../services/api';
 interface User {
     id: string;
     username: string;
+    email?: string;
     role: string;
+    must_change_password?: boolean;
 }
 
 interface AuthContextType {

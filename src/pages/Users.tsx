@@ -248,15 +248,21 @@ const Users: React.FC = () => {
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        {editingUser ? 'New Password (leave blank to keep current)' : 'Password (leave blank to auto-generate)'}
+                                        {editingUser ? 'New Password (leave blank to keep current)' : 'Password'}
                                     </label>
-                                    <input
-                                        type="password"
-                                        value={formData.password}
-                                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                        className="input-field"
-                                    // required={!editingUser} // No longer required for new users
-                                    />
+                                    {!editingUser ? (
+                                        <div className="text-sm text-gray-500 italic bg-gray-50 p-2 rounded border border-gray-100">
+                                            Password will be auto-generated and sent to the user's email.
+                                        </div>
+                                    ) : (
+                                        <input
+                                            type="password"
+                                            value={formData.password}
+                                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                            className="input-field"
+                                            placeholder="Enter new password to reset"
+                                        />
+                                    )}
                                 </div>
 
                                 <div>

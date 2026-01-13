@@ -5,10 +5,6 @@ import { authenticateToken, authorizeRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Ensure only Administrators can manage users
-router.use(authenticateToken);
-router.use(authorizeRole(['Administrator']));
-
 const VALID_ROLES = [
     'Administrator',
     'Administrator Assistant',
@@ -18,10 +14,13 @@ const VALID_ROLES = [
     'Clearance Manager Assistant'
 ];
 
-// Get all users
-router.get('/', async (req, res) => {
+// Ensure authentication
+router.use(authenticateToken);
+
+// Get all users (Admins only)
+router.get('/', authorizeRole(['Administrator']), async (req, res) => {
     try {
-        const result = await pool.query('SELECT id, username, role, created_at FROM users ORDER BY created_at DESC');
+        const result = await pool.query('SELECT id, username, role, email, created_at FROM users ORDER BY created_at DESC');
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching users:', error);
@@ -29,8 +28,8 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Create new user
-router.post('/', async (req, res) => {
+// Create new user (Admins only)
+router.post('/', authorizeRole(['Administrator']), async (req, res) => {
     const { username, password, role, email } = req.body;
 
     if (!username || !role || !email) {
@@ -50,8 +49,8 @@ router.post('/', async (req, res) => {
 
         // Insert user
         const result = await pool.query(
-            'INSERT INTO users (username, password, role, email) VALUES ($1, $2, $3, $4) RETURNING id, username, role, email, created_at',
-            [username, hashedPassword, role, email]
+            'INSERT INTO users (username, password, role, email, must_change_password) VALUES ($1, $2, $3, $4, $5) RETURNING id, username, role, email, created_at',
+            [username, hashedPassword, role, email, true]
         );
 
         // Send Welcome Email
@@ -83,6 +82,16 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     const { id } = req.params;
     const { role, password, username, email } = req.body;
+
+    // Authorization Check: Admin or Self
+    if (req.user.role !== 'Administrator' && req.user.id !== id) {
+        return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Only Admin can change roles
+    if (role && req.user.role !== 'Administrator') {
+        return res.status(403).json({ error: 'Only Administrators can change roles' });
+    }
 
     if (role && !VALID_ROLES.includes(role)) {
         return res.status(400).json({ error: 'Invalid role' });
@@ -149,8 +158,8 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-// Delete user
-router.delete('/:id', async (req, res) => {
+// Delete user (Admins only)
+router.delete('/:id', authorizeRole(['Administrator']), async (req, res) => {
     const { id } = req.params;
 
     if (id === req.user.id) {

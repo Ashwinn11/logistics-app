@@ -45,7 +45,9 @@ router.post('/login', async (req, res) => {
             user: {
                 id: user.id,
                 username: user.username,
-                role: user.role
+                email: user.email,
+                role: user.role,
+                must_change_password: user.must_change_password
             }
         });
     } catch (error) {
@@ -170,6 +172,51 @@ router.post('/reset-password', async (req, res) => {
 
     } catch (error) {
         console.error('Reset password error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Change Password (Authenticated)
+router.post('/change-password', authenticateToken, async (req, res) => {
+    const { oldPassword, newPassword } = req.body;
+
+    if (!newPassword || !oldPassword) {
+        return res.status(400).json({ error: 'Old and new passwords are required' });
+    }
+
+    try {
+        // Get user
+        const result = await pool.query('SELECT password FROM users WHERE id = $1', [req.user.id]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        const user = result.rows[0];
+
+        // Verify old password
+        const validPassword = await bcrypt.compare(oldPassword, user.password);
+        if (!validPassword) {
+            return res.status(401).json({ error: 'Incorrect old password' });
+        }
+
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // Update password and clear must_change_password flag
+        await pool.query(
+            'UPDATE users SET password = $1, must_change_password = FALSE WHERE id = $2',
+            [hashedPassword, req.user.id]
+        );
+
+        // Log action
+        await pool.query(
+            'INSERT INTO audit_logs (user_id, action, details, entity_type, entity_id) VALUES ($1, $2, $3, $4, $5)',
+            [req.user.id, 'CHANGE_PASSWORD', `User changed password`, 'USER', req.user.id]
+        );
+
+        res.json({ message: 'Password changed successfully' });
+
+    } catch (error) {
+        console.error('Change password error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });

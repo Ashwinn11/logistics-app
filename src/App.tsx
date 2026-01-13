@@ -15,13 +15,30 @@ import Settings from './pages/Settings';
 import Reports from './pages/Reports';
 import Containers from './pages/Containers';
 import DeliveryNotes from './pages/DeliveryNotes';
+import ChangePassword from './pages/ChangePassword';
 import ResetPassword from './pages/ResetPassword';
 import ForgotPassword from './pages/ForgotPassword';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <>{children}</> : <Navigate to="/" replace />;
+  const { isAuthenticated, user } = useAuth();
+  const location = window.location.pathname;
+
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (user?.must_change_password && location !== '/change-password') {
+    return <Navigate to="/change-password" replace />;
+  }
+
+  if (!user?.must_change_password && location === '/change-password') {
+    // Optional: Redirect away if they don't need to change password (or allow them to stay)
+    // For now, let's allow access or better, redirect to dashboard if they try to hit the forced reset page manually
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
 };
 
 function App() {
@@ -32,6 +49,16 @@ function App() {
           <Route path="/" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+
+          <Route
+            path="/change-password"
+            element={
+              <ProtectedRoute>
+                <ChangePassword />
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="/dashboard"
             element={
@@ -40,6 +67,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* ... other routes ... */}
           <Route
             path="/shipments"
             element={
