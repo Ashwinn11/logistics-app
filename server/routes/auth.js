@@ -78,4 +78,100 @@ router.post('/logout', authenticateToken, (req, res) => {
     res.json({ message: 'Logged out successfully' });
 });
 
+// Forgot Password
+router.post('/forgot-password', async (req, res) => {
+    const { email } = req.body;
+
+    if (!email) {
+        return res.status(400).json({ error: 'Email is required' });
+    }
+
+    try {
+        const result = await pool.query('SELECT id, username FROM users WHERE email = $1', [email]);
+
+        if (result.rows.length === 0) {
+            // For security, do not reveal if the email exists
+            return res.json({ message: 'If an account with that email exists, a password reset link has been sent.' });
+        }
+
+        const user = result.rows[0];
+
+        // Generate Token (simple random string for now, could use crypto.randomBytes)
+        // Using crypto would require importing it, but let's stick to a simple secure enough random string for this context or use jwt
+        // Let's use jwt as we already have it imported, it's easy to verify and can contain expiration
+        const token = jwt.sign(
+            { id: user.id, type: 'reset' },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
+        // Store token hash in DB (optional if using stateless JWT, but prompt implied storing random password/token flow. 
+        // Although JWT is self-contained. Let's strictly follow "add column reset_token" from migration)
+        // Actually, if we use JWT we don't strictly need to store it if we just verify signature, 
+        // BUT storing it allows us to invalidate it after use (single use).
+
+        // Let's store it to ensure single use and valid tracking
+        await pool.query(
+            'UPDATE users SET reset_password_token = $1, reset_password_expires = NOW() + INTERVAL \'1 hour\' WHERE id = $2',
+            [token, user.id]
+        );
+
+        // Send Email
+        const { sendPasswordResetEmail } = await import('../utils/email.js');
+        await sendPasswordResetEmail(email, token);
+
+        res.json({ message: 'If an account with that email exists, a password reset link has been sent.' });
+
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Reset Password
+router.post('/reset-password', async (req, res) => {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+        return res.status(400).json({ error: 'Token and new password are required' });
+    }
+
+    try {
+        // Verify JWT first (checks expiration and signature)
+        let decoded;
+        try {
+            decoded = jwt.verify(token, process.env.JWT_SECRET);
+        } catch (err) {
+            return res.status(400).json({ error: 'Invalid or expired token' });
+        }
+
+        if (decoded.type !== 'reset') {
+            return res.status(400).json({ error: 'Invalid token type' });
+        }
+
+        // Check if token matches DB and is not expired (double check database side)
+        const result = await pool.query(
+            'SELECT id FROM users WHERE id = $1 AND reset_password_token = $2 AND reset_password_expires > NOW()',
+            [decoded.id, token]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(400).json({ error: 'Invalid or expired token' });
+        }
+
+        // Update Password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await pool.query(
+            'UPDATE users SET password = $1, reset_password_token = NULL, reset_password_expires = NULL WHERE id = $2',
+            [hashedPassword, decoded.id]
+        );
+
+        res.json({ message: 'Password has been reset successfully' });
+
+    } catch (error) {
+        console.error('Reset password error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 export default router;

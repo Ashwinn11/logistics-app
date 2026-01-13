@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 interface User {
     id: string;
     username: string;
+    email?: string;
     role: string;
     created_at: string;
 }
@@ -28,6 +29,7 @@ const Users: React.FC = () => {
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [formData, setFormData] = useState({
         username: '',
+        email: '',
         password: '',
         role: ROLES[0]
     });
@@ -58,6 +60,9 @@ const Users: React.FC = () => {
                 if (formData.username && formData.username !== editingUser.username) {
                     data.username = formData.username;
                 }
+                if (formData.email && formData.email !== editingUser.email) {
+                    data.email = formData.email;
+                }
                 if (formData.password) {
                     data.password = formData.password;
                 }
@@ -87,6 +92,7 @@ const Users: React.FC = () => {
         setEditingUser(user);
         setFormData({
             username: user.username,
+            email: user.email || '',
             password: '',
             role: user.role
         });
@@ -97,6 +103,7 @@ const Users: React.FC = () => {
         setEditingUser(null);
         setFormData({
             username: '',
+            email: '',
             password: '',
             role: ROLES[0]
         });
@@ -229,15 +236,26 @@ const Users: React.FC = () => {
                                 </div>
 
                                 <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                    <input
+                                        type="email"
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                        className="input-field"
+                                        required
+                                    />
+                                </div>
+
+                                <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        {editingUser ? 'New Password (leave blank to keep current)' : 'Password'}
+                                        {editingUser ? 'New Password (leave blank to keep current)' : 'Password (leave blank to auto-generate)'}
                                     </label>
                                     <input
                                         type="password"
                                         value={formData.password}
                                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                         className="input-field"
-                                        required={!editingUser}
+                                    // required={!editingUser} // No longer required for new users
                                     />
                                 </div>
 

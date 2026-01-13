@@ -31,25 +31,37 @@ router.get('/', async (req, res) => {
 
 // Create new user
 router.post('/', async (req, res) => {
-    const { username, password, role } = req.body;
+    const { username, password, role, email } = req.body;
 
-    if (!username || !password || !role) {
-        return res.status(400).json({ error: 'Missing required fields' });
+    if (!username || !role || !email) {
+        return res.status(400).json({ error: 'Missing required fields (username, role, email)' });
     }
 
     if (!VALID_ROLES.includes(role)) {
         return res.status(400).json({ error: 'Invalid role' });
     }
 
+    // Generate random password if not provided
+    const generatedPassword = password || Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+
     try {
         // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = await bcrypt.hash(generatedPassword, 10);
 
         // Insert user
         const result = await pool.query(
-            'INSERT INTO users (username, password, role) VALUES ($1, $2, $3) RETURNING id, username, role, created_at',
-            [username, hashedPassword, role]
+            'INSERT INTO users (username, password, role, email) VALUES ($1, $2, $3, $4) RETURNING id, username, role, email, created_at',
+            [username, hashedPassword, role, email]
         );
+
+        // Send Welcome Email
+        try {
+            const { sendWelcomeEmail } = await import('../utils/email.js');
+            await sendWelcomeEmail(email, username, generatedPassword);
+        } catch (emailError) {
+            console.error('Failed to send welcome email:', emailError);
+            // Don't fail the request, just log it
+        }
 
         // Log action
         await pool.query(
@@ -60,7 +72,7 @@ router.post('/', async (req, res) => {
         res.status(201).json(result.rows[0]);
     } catch (error) {
         if (error.code === '23505') { // Unique violation
-            return res.status(409).json({ error: 'Username already exists' });
+            return res.status(409).json({ error: 'Username or email already exists' });
         }
         console.error('Error creating user:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -70,7 +82,7 @@ router.post('/', async (req, res) => {
 // Update user
 router.put('/:id', async (req, res) => {
     const { id } = req.params;
-    const { role, password, username } = req.body;
+    const { role, password, username, email } = req.body;
 
     if (role && !VALID_ROLES.includes(role)) {
         return res.status(400).json({ error: 'Invalid role' });
@@ -93,6 +105,12 @@ router.put('/:id', async (req, res) => {
             index++;
         }
 
+        if (email) {
+            query += `email = $${index}, `;
+            values.push(email);
+            index++;
+        }
+
         if (password) {
             const hashedPassword = await bcrypt.hash(password, 10);
             query += `password = $${index}, `;
@@ -106,7 +124,7 @@ router.put('/:id', async (req, res) => {
 
         // Remove trailing comma and space
         query = query.slice(0, -2);
-        query += ` WHERE id = $${index} RETURNING id, username, role`;
+        query += ` WHERE id = $${index} RETURNING id, username, role, email`;
         values.push(id);
 
         const result = await pool.query(query, values);
@@ -124,7 +142,7 @@ router.put('/:id', async (req, res) => {
         res.json(result.rows[0]);
     } catch (error) {
         if (error.code === '23505') { // Unique violation
-            return res.status(409).json({ error: 'Username already exists' });
+            return res.status(409).json({ error: 'Username or email already exists' });
         }
         console.error('Error updating user:', error);
         res.status(500).json({ error: 'Internal server error' });
