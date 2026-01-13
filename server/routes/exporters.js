@@ -22,7 +22,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
 // Create single exporter
 router.post('/', authenticateToken, async (req, res) => {
-    const { name, email, phone, address, code } = req.body;
+    const { name, email, phone, country } = req.body;
 
     if (!name) {
         return res.status(400).json({ error: 'Name is required' });
@@ -30,8 +30,8 @@ router.post('/', authenticateToken, async (req, res) => {
 
     try {
         const result = await pool.query(
-            'INSERT INTO exporters (name, email, phone, address, code) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [name, email, phone, address, code]
+            'INSERT INTO exporters (name, email, phone, country) VALUES ($1, $2, $3, $4) RETURNING *',
+            [name, email, phone, country]
         );
         res.json(result.rows[0]);
     } catch (error) {
@@ -43,7 +43,7 @@ router.post('/', authenticateToken, async (req, res) => {
 // Update exporter
 router.put('/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
-    const { name, email, phone, address, code } = req.body;
+    const { name, email, phone, country } = req.body;
 
     if (!name) {
         return res.status(400).json({ error: 'Name is required' });
@@ -51,8 +51,8 @@ router.put('/:id', authenticateToken, async (req, res) => {
 
     try {
         const result = await pool.query(
-            'UPDATE exporters SET name = $1, email = $2, phone = $3, address = $4, code = $5, updated_at = CURRENT_TIMESTAMP WHERE id = $6 RETURNING *',
-            [name, email, phone, address, code, id]
+            'UPDATE exporters SET name = $1, email = $2, phone = $3, country = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5 RETURNING *',
+            [name, email, phone, country, id]
         );
 
         if (result.rows.length === 0) {
@@ -92,13 +92,12 @@ router.post('/import', authenticateToken, upload.single('file'), async (req, res
 
             try {
                 await pool.query(
-                    'INSERT INTO exporters (name, email, phone, address, code) VALUES ($1, $2, $3, $4, $5)',
+                    'INSERT INTO exporters (name, email, phone, country) VALUES ($1, $2, $3, $4)',
                     [
                         name,
                         normalizedRow['email'] || null,
                         normalizedRow['phone'] || null,
-                        normalizedRow['address'] || null,
-                        normalizedRow['code'] || normalizedRow['id'] || null
+                        normalizedRow['country'] || null
                     ]
                 );
                 successCount++;
