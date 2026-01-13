@@ -27,7 +27,26 @@ const Profile: React.FC = () => {
     const [qrCodeUrl, setQrCodeUrl] = useState('');
     const [twoFactorToken, setTwoFactorToken] = useState('');
 
+    // Sessions State
+    interface Session {
+        id: string;
+        ip_address: string;
+        user_agent: string;
+        last_active: string;
+        is_current: boolean;
+    }
+    const [sessions, setSessions] = useState<Session[]>([]);
+
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const fetchSessions = async () => {
+        try {
+            const response = await authAPI.getSessions();
+            setSessions(response.data);
+        } catch (error) {
+            console.error('Failed to fetch sessions:', error);
+        }
+    };
 
     React.useEffect(() => {
         if (user) {
@@ -35,8 +54,20 @@ const Profile: React.FC = () => {
                 name: user.username,
                 email: user.email || ''
             });
+            fetchSessions();
         }
     }, [user]);
+
+    const handleRevokeSession = async (sessionId: string) => {
+        try {
+            await authAPI.revokeSession(sessionId);
+            await fetchSessions();
+            setMessage({ type: 'success', text: 'Session revoked successfully.' });
+        } catch (error) {
+            console.error('Revoke session error:', error);
+            setMessage({ type: 'error', text: 'Failed to revoke session.' });
+        }
+    };
 
     const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setProfile({ ...profile, [e.target.name]: e.target.value });
@@ -396,20 +427,52 @@ const Profile: React.FC = () => {
                                 If necessary, you may log out of all of your other browser sessions across all of your devices. Some of your recent sessions are listed below; however, this list may not be exhaustive. If you feel your account has been compromised, you should also update your password.
                             </p>
 
-                            {/* Current Session */}
-                            <div className="flex items-center gap-4 mb-6">
-                                <Monitor className="w-8 h-8 text-gray-400" />
-                                <div>
-                                    <p className="text-sm font-medium text-gray-900">OS X - Chrome</p>
-                                    <p className="text-xs text-gray-500">
-                                        127.0.0.1, <span className="text-green-600 font-medium">This device</span>
-                                    </p>
-                                </div>
-                            </div>
+                            <div className="space-y-4 mb-6">
+                                {sessions.length === 0 && (
+                                    <p className="text-sm text-gray-400 italic">Loading sessions...</p>
+                                )}
+                                {sessions.map((session) => (
+                                    <div key={session.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <Monitor className={`w-8 h-8 ${session.is_current ? 'text-green-600' : 'text-gray-400'}`} />
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium text-gray-900">
+                                                {session.user_agent ? (() => {
+                                                    const ua = session.user_agent.toLowerCase();
+                                                    let os = 'Unknown OS';
+                                                    let browser = 'Unknown Browser';
 
-                            <button className="px-4 py-2 bg-gray-900 text-white text-xs font-bold rounded shadow-sm hover:bg-black transition-colors uppercase tracking-wide">
-                                Log Out Other Browser Sessions
-                            </button>
+                                                    if (ua.includes('mac')) os = 'macOS';
+                                                    else if (ua.includes('win')) os = 'Windows';
+                                                    else if (ua.includes('linux')) os = 'Linux';
+                                                    else if (ua.includes('iphone') || ua.includes('ipad')) os = 'iOS';
+                                                    else if (ua.includes('android')) os = 'Android';
+
+                                                    if (ua.includes('chrome')) browser = 'Chrome';
+                                                    else if (ua.includes('firefox')) browser = 'Firefox';
+                                                    else if (ua.includes('safari') && !ua.includes('chrome')) browser = 'Safari';
+                                                    else if (ua.includes('edge')) browser = 'Edge';
+
+                                                    return `${os} - ${browser}`;
+                                                })() : 'Unknown Device'}
+                                            </p>
+                                            <p className="text-xs text-gray-500">
+                                                {session.ip_address},
+                                                <span className={session.is_current ? "text-green-600 font-medium ml-1" : "ml-1"}>
+                                                    {session.is_current ? 'This device' : `Last active: ${new Date(session.last_active).toLocaleDateString()}`}
+                                                </span>
+                                            </p>
+                                        </div>
+                                        {!session.is_current && (
+                                            <button
+                                                onClick={() => handleRevokeSession(session.id)}
+                                                className="text-xs text-red-600 hover:text-red-800 font-medium"
+                                            >
+                                                Revoke
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>

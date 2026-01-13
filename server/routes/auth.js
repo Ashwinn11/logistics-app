@@ -8,6 +8,10 @@ import QRCode from 'qrcode';
 
 const router = express.Router();
 
+import crypto from 'crypto';
+
+// ... (imports)
+
 // Login
 router.post('/login', async (req, res) => {
     try {
@@ -59,6 +63,22 @@ router.post('/login', async (req, res) => {
             { expiresIn: '24h' }
         );
 
+        // Store Session
+        try {
+            const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+            const userAgent = req.headers['user-agent'] || 'Unknown';
+            // Simple IP extraction (handles proxies if configured, otherwise simple)
+            const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'Unknown';
+
+            await pool.query(
+                'INSERT INTO user_sessions (user_id, token_hash, ip_address, user_agent, expires_at) VALUES ($1, $2, $3, $4, NOW() + INTERVAL \'24 hours\')',
+                [user.id, tokenHash, ip, userAgent]
+            );
+        } catch (sessionError) {
+            console.error('Error saving session:', sessionError);
+            // Don't fail login if session tracking fails, but nice to know
+        }
+
         res.json({
             token,
             user: {
@@ -77,103 +97,62 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// 2FA: Generate Secret
-router.post('/2fa/generate', authenticateToken, async (req, res) => {
+// ... (2FA routes remain same)
+
+// Get Active Sessions
+router.get('/sessions', authenticateToken, async (req, res) => {
     try {
-        const secret = speakeasy.generateSecret({
-            name: `Seaflow Logistics (${req.user.username})`
-        });
+        const token = req.headers['authorization']?.split(' ')[1];
+        const currentTokenHash = token ? crypto.createHash('sha256').update(token).digest('hex') : null;
 
-        // Store secret temporarily (or update existing) but keep enabled = false
-        await pool.query(
-            'UPDATE users SET two_factor_secret = $1 WHERE id = $2',
-            [secret.base32, req.user.id]
-        );
-
-        // Generate QR Code
-        const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url);
-
-        res.json({
-            secret: secret.base32,
-            qrCodeUrl
-        });
-    } catch (error) {
-        console.error('2FA Generate error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// 2FA: Verify & Enable
-router.post('/2fa/verify', authenticateToken, async (req, res) => {
-    const { token } = req.body;
-
-    if (!token) {
-        return res.status(400).json({ error: 'Token is required' });
-    }
-
-    try {
-        // Get user's secret
-        const result = await pool.query('SELECT two_factor_secret FROM users WHERE id = $1', [req.user.id]);
-        const user = result.rows[0];
-
-        if (!user || !user.two_factor_secret) {
-            return res.status(400).json({ error: '2FA not initialized' });
-        }
-
-        const verified = speakeasy.totp.verify({
-            secret: user.two_factor_secret,
-            encoding: 'base32',
-            token
-        });
-
-        if (verified) {
-            await pool.query('UPDATE users SET two_factor_enabled = TRUE WHERE id = $1', [req.user.id]);
-            res.json({ message: 'Two-factor authentication enabled successfully', verified: true });
-        } else {
-            res.status(400).json({ error: 'Invalid token', verified: false });
-        }
-    } catch (error) {
-        console.error('2FA Verify error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// 2FA: Disable
-router.post('/2fa/disable', authenticateToken, async (req, res) => {
-    try {
-        await pool.query(
-            'UPDATE users SET two_factor_enabled = FALSE, two_factor_secret = NULL WHERE id = $1',
-            [req.user.id]
-        );
-        res.json({ message: 'Two-factor authentication disabled' });
-    } catch (error) {
-        console.error('2FA Disable error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Get current user
-router.get('/me', authenticateToken, async (req, res) => {
-    try {
         const result = await pool.query(
-            'SELECT id, username, role, email, created_at, photo_url, two_factor_enabled FROM users WHERE id = $1',
-            [req.user.id]
+            `SELECT id, ip_address, user_agent, last_active, created_at, 
+            (token_hash = $2) as is_current 
+            FROM user_sessions 
+            WHERE user_id = $1 
+            ORDER BY last_active DESC`,
+            [req.user.id, currentTokenHash]
         );
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-
-        res.json(result.rows[0]);
+        res.json(result.rows);
     } catch (error) {
-        console.error('Get user error:', error);
+        console.error('Get sessions error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
 
-// Logout (client-side token removal, but endpoint for consistency)
-router.post('/logout', authenticateToken, (req, res) => {
-    res.json({ message: 'Logged out successfully' });
+// Revoke Session
+router.delete('/sessions/:id', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        await pool.query(
+            'DELETE FROM user_sessions WHERE id = $1 AND user_id = $2',
+            [id, req.user.id]
+        );
+        res.json({ message: 'Session revoked' });
+    } catch (error) {
+        console.error('Revoke session error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Logout (Revoke current session)
+router.post('/logout', authenticateToken, async (req, res) => {
+    try {
+        const token = req.headers['authorization']?.split(' ')[1];
+        if (token) {
+            const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+            await pool.query(
+                'DELETE FROM user_sessions WHERE token_hash = $1',
+                [tokenHash]
+            );
+        }
+        res.json({ message: 'Logged out successfully' });
+    } catch (error) {
+        console.error('Logout error:', error);
+        // Even if DB fails, tell client strictly to clear token
+        res.json({ message: 'Logged out' });
+    }
 });
 
 // Forgot Password

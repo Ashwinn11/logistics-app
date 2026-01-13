@@ -54,6 +54,8 @@ export const authAPI = {
     generate2FA: () => api.post('/auth/2fa/generate'),
     verify2FA: (token: string) => api.post('/auth/2fa/verify', { token }),
     disable2FA: () => api.post('/auth/2fa/disable'),
+    getSessions: () => api.get('/auth/sessions'),
+    revokeSession: (id: string) => api.delete(`/auth/sessions/${id}`),
 };
 
 // Shipments API
