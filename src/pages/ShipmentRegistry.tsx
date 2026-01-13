@@ -25,11 +25,8 @@ const ShipmentRegistry: React.FC = () => {
         transport_mode: 'SEA',
         shipment_type: 'IMP',
         billing_contact_same: true,
-        billing_contact: '',
-        // Additional fields for completeness
-        description: 'General Cargo',
-        weight: '',
-        price: ''
+        billing_contact: ''
+        // Reverted: Removed extra fields like description, weight, price
     });
 
     useEffect(() => {
@@ -74,10 +71,7 @@ const ShipmentRegistry: React.FC = () => {
             transport_mode: 'SEA',
             shipment_type: 'IMP',
             billing_contact_same: true,
-            billing_contact: '',
-            description: 'General Cargo',
-            weight: '',
-            price: ''
+            billing_contact: ''
         });
         setViewMode('create');
         setSelectedJob(null);
@@ -92,46 +86,6 @@ const ShipmentRegistry: React.FC = () => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
-
-    const handleCreateSubmit = async () => {
-        try {
-            setLoading(true);
-
-            // Construct FormData as expected by the backend
-            // The backend expects generic fields: sender_name, receiver_name, transport_mode, etc.
-            const apiData = new FormData();
-
-            // Map UI 'Exporter' -> sender_name / customer
-            apiData.append('sender_name', formData.exporter);
-
-            // Map UI 'Consignee' -> receiver_name
-            apiData.append('receiver_name', formData.consignee);
-
-            apiData.append('transport_mode', formData.transport_mode);
-            apiData.append('description', `${formData.service} - ${formData.description}`);
-            apiData.append('weight', formData.weight || '0');
-            apiData.append('price', formData.price || '0');
-
-            // Default dates
-            apiData.append('date', new Date().toISOString());
-            apiData.append('expected_delivery_date', new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()); // +7 days
-
-            // Note: File uploads are not in this simplified form yet, but backend handles them optionally.
-
-            await shipmentsAPI.create(apiData);
-
-            alert('Job Created Successfully!');
-            setViewMode('empty');
-            loadJobs();
-
-        } catch (error: any) {
-            console.error('Create Job Failed', error);
-            alert('Failed to create job: ' + (error.response?.data?.error || error.message));
-        } finally {
-            setLoading(false);
-        }
-    };
-
 
     const getModeIcon = (mode: string) => {
         switch (mode?.toUpperCase()) {
@@ -234,54 +188,39 @@ const ShipmentRegistry: React.FC = () => {
                 {/* Section B: Consignee */}
                 <div className="form-group">
                     <div className="mt-4 animate-fade-in-down">
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Consignee (Receiver)</label>
-                        <input
-                            type="text"
-                            name="consignee"
-                            value={formData.consignee}
-                            onChange={handleInputChange}
-                            placeholder="Enter Consignee Name"
-                            className="w-full p-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
-                        />
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Consignee</label>
+                        <div className="relative">
+                            <select
+                                name="consignee"
+                                onChange={handleInputChange}
+                                className="w-full p-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none appearance-none text-gray-700"
+                            >
+                                <option value="">Select Consignee</option>
+                                <option value="Contact 1">Consignee</option>
+                            </select>
+                            <div className="absolute right-3 top-3.5 pointer-events-none text-gray-400">
+                                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 {/* Section C: Exporter */}
                 <div className="form-group">
                     <div className="mt-4 animate-fade-in-down">
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Exporter (Sender)</label>
-                        <input
-                            type="text"
-                            name="exporter"
-                            value={formData.exporter}
-                            onChange={handleInputChange}
-                            placeholder="Enter Exporter Name"
-                            className="w-full p-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
-                        />
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-6">
-                    <div className="form-group">
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Weight (kg)</label>
-                        <input
-                            type="text"
-                            name="weight"
-                            value={formData.weight}
-                            onChange={handleInputChange}
-                            placeholder="e.g. 500"
-                            className="w-full p-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Declared Value ($)</label>
-                        <input
-                            type="number"
-                            name="price"
-                            value={formData.price}
-                            onChange={handleInputChange}
-                            placeholder="e.g. 1500.00"
-                            className="w-full p-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                        />
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Exporter</label>
+                        <div className="relative">
+                            <select
+                                name="billing_contact"
+                                onChange={handleInputChange}
+                                className="w-full p-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none appearance-none text-gray-700"
+                            >
+                                <option value="">Select Exporter</option>
+                                <option value="Contact 1">Exporter</option>
+                            </select>
+                            <div className="absolute right-3 top-3.5 pointer-events-none text-gray-400">
+                                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -347,14 +286,19 @@ const ShipmentRegistry: React.FC = () => {
                     {!formData.billing_contact_same && (
                         <div className="mt-4 animate-fade-in-down">
                             <label className="block text-sm font-semibold text-gray-700 mb-2">Billing Contact</label>
-                            <input
-                                type="text"
-                                name="billing_contact"
-                                value={formData.billing_contact}
-                                onChange={handleInputChange}
-                                placeholder="Enter Billing Contact Name"
-                                className="w-full p-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                            />
+                            <div className="relative">
+                                <select
+                                    name="billing_contact"
+                                    onChange={handleInputChange}
+                                    className="w-full p-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none appearance-none text-gray-700"
+                                >
+                                    <option value="">Select Billing Contact...</option>
+                                    <option value="Contact 1">Contact 1</option>
+                                </select>
+                                <div className="absolute right-3 top-3.5 pointer-events-none text-gray-400">
+                                    <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -369,11 +313,10 @@ const ShipmentRegistry: React.FC = () => {
                     Cancel
                 </button>
                 <button
-                    onClick={handleCreateSubmit}
-                    disabled={loading}
-                    className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-200 transition-all shadow flex justify-center items-center"
+                    onClick={() => { alert('Job Saved!'); setViewMode('empty'); }}
+                    className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-200 transition-all shadow"
                 >
-                    {loading ? 'Saving...' : 'Save Job'}
+                    Save Job
                 </button>
             </div>
         </div>
@@ -595,7 +538,7 @@ const ShipmentRegistry: React.FC = () => {
                             <h3 className="text-xl font-bold text-gray-900 mb-2">Nothing here yet</h3>
                             <p className="text-gray-500 max-w-sm mb-8">
                                 To view a job, select a job from the inbox.<br />
-                                To add a new job, click the + button to create manually, or use the upload icon for Excel import.
+                                To add a new job, click the + button.
                             </p>
                         </div>
                     )}
