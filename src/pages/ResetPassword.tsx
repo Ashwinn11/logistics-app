@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Package, Lock, Loader2, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { Package, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { authAPI } from '../services/api';
 

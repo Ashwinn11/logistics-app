@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import {
     Search, Eye, Printer, ChevronDown,
-    X, Download, Trash, Upload
+    X, Download, Upload
 } from 'lucide-react';
 import Barcode from 'react-barcode';
 import { deliveryNotesAPI } from '../services/api';
