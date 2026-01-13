@@ -159,7 +159,7 @@ const Profile: React.FC = () => {
             setShow2FAModal(true);
         } catch (error: any) {
             console.error('2FA Generate error:', error);
-            setMessage({ type: 'error', text: 'Failed to generate 2FA secret.' });
+            setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to generate 2FA secret.' });
         } finally {
             setLoading(false);
         }

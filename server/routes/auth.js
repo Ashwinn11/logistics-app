@@ -97,7 +97,80 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// ... (2FA routes remain same)
+// 2FA: Generate Secret
+router.post('/2fa/generate', authenticateToken, async (req, res) => {
+    try {
+        const secret = speakeasy.generateSecret({
+            name: `Seaflow Logistics (${req.user.username})`
+        });
+
+        // Store secret temporarily (or update existing) but keep enabled = false
+        await pool.query(
+            'UPDATE users SET two_factor_secret = $1 WHERE id = $2',
+            [secret.base32, req.user.id]
+        );
+
+        // Generate QR Code
+        const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url);
+
+        res.json({
+            secret: secret.base32,
+            qrCodeUrl
+        });
+    } catch (error) {
+        console.error('2FA Generate error:', error);
+        res.status(500).json({ error: 'Failed to generate 2FA: ' + (error.message || 'Unknown error') });
+    }
+});
+
+// 2FA: Verify & Enable
+router.post('/2fa/verify', authenticateToken, async (req, res) => {
+    const { token } = req.body;
+
+    if (!token) {
+        return res.status(400).json({ error: 'Token is required' });
+    }
+
+    try {
+        // Get user's secret
+        const result = await pool.query('SELECT two_factor_secret FROM users WHERE id = $1', [req.user.id]);
+        const user = result.rows[0];
+
+        if (!user || !user.two_factor_secret) {
+            return res.status(400).json({ error: '2FA not initialized' });
+        }
+
+        const verified = speakeasy.totp.verify({
+            secret: user.two_factor_secret,
+            encoding: 'base32',
+            token
+        });
+
+        if (verified) {
+            await pool.query('UPDATE users SET two_factor_enabled = TRUE WHERE id = $1', [req.user.id]);
+            res.json({ message: 'Two-factor authentication enabled successfully', verified: true });
+        } else {
+            res.status(400).json({ error: 'Invalid token', verified: false });
+        }
+    } catch (error) {
+        console.error('2FA Verify error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// 2FA: Disable
+router.post('/2fa/disable', authenticateToken, async (req, res) => {
+    try {
+        await pool.query(
+            'UPDATE users SET two_factor_enabled = FALSE, two_factor_secret = NULL WHERE id = $1',
+            [req.user.id]
+        );
+        res.json({ message: 'Two-factor authentication disabled' });
+    } catch (error) {
+        console.error('2FA Disable error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
 
 // Get Active Sessions
 router.get('/sessions', authenticateToken, async (req, res) => {
