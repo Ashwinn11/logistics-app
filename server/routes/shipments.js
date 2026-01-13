@@ -1,3 +1,4 @@
+
 import express from 'express';
 import pool from '../config/database.js';
 import { authenticateToken, authorizeRole } from '../middleware/auth.js';
@@ -5,11 +6,9 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { generateInvoicePDF } from '../utils/invoiceGenerator.js';
-
-import csv from 'csv-parser';
+import * as XLSX from 'xlsx';
 
 const router = express.Router();
-
 
 // Multer Storage Configuration
 const storage = multer.diskStorage({
@@ -29,13 +28,14 @@ const upload = multer({
     storage,
     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
     fileFilter: (req, file, cb) => {
-        const allowedTypes = /jpeg|jpg|png|pdf/;
+        // Updated regex to allow xlxs, xls, csv for imports AND images/pdf for docs
+        const allowedTypes = /jpeg|jpg|png|pdf|xlsx|xls|csv/;
         const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = allowedTypes.test(file.mimetype);
-        if (extname && mimetype) {
+        // checks mimetype but mimetype for excel can varies, so mostly relying on extension for excel
+        if (extname) {
             return cb(null, true);
         }
-        cb(new Error('Only PDF and JPEG/PNG images are allowed'));
+        cb(new Error('Invalid file type. Allowed: PDF, Images, Excel, CSV'));
     }
 });
 
@@ -63,116 +63,122 @@ const generateShipmentId = async () => {
     return `${prefix}-${String(nextNum).padStart(3, '0')}`;
 };
 
-// Import Shipments from CSV
+// Import Shipments from Excel/CSV
 router.post('/import', authenticateToken, upload.single('file'), async (req, res) => {
     if (!req.file) {
-        return res.status(400).json({ error: 'No CSV file uploaded' });
+        return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    const results = [];
     const filePath = req.file.path;
 
-    fs.createReadStream(filePath)
-        .pipe(csv())
-        .on('data', (data) => results.push(data))
-        .on('end', async () => {
+    try {
+        const workbook = XLSX.readFile(filePath);
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const data = XLSX.utils.sheet_to_json(sheet);
+
+        // Remove the uploaded file after parsing
+        fs.unlinkSync(filePath);
+
+        const importedShipments = [];
+        let successCount = 0;
+        let failureCount = 0;
+        let errors = [];
+
+        await pool.query('BEGIN');
+
+        for (const row of data) {
             try {
-                // Remove the uploaded CSV file after parsing
-                fs.unlinkSync(filePath);
+                // Normalize keys to lowercase
+                const normalizedRow = {};
+                Object.keys(row).forEach(key => {
+                    normalizedRow[key.toLowerCase().trim()] = row[key];
+                });
 
-                const importedShipments = [];
-                let successCount = 0;
-                let failureCount = 0;
+                const id = await generateShipmentId();
+                const status = 'New';
+                const progress = 0;
 
-                await pool.query('BEGIN');
+                // Expected Headers (flexible): 'customer', 'consignee', 'exporter', 'transport mode', 'description', 'weight', 'price'
+                // Mapping
+                const customer = normalizedRow['customer'] || normalizedRow['client'] || 'Unknown';
+                const consignee = normalizedRow['consignee'] || normalizedRow['receiver'] || 'Unknown';
+                const exporter = normalizedRow['exporter'] || normalizedRow['shipper'] || normalizedRow['sender'] || 'Unknown';
+                const transport_mode = normalizedRow['transport mode'] || normalizedRow['mode'] || 'SEA';
+                const description = normalizedRow['description'] || normalizedRow['goods'] || 'Import Goods';
+                const weight = normalizedRow['weight'] || '0';
+                const price = parseFloat(normalizedRow['price'] || normalizedRow['value'] || normalizedRow['amount'] || '0');
+                const origin = normalizedRow['origin'] || exporter;
+                const destination = normalizedRow['destination'] || consignee;
 
-                for (const row of results) {
-                    try {
-                        const id = await generateShipmentId();
-                        const status = 'New';
-                        const progress = 0;
-
-                        // Flexible Mapping (Case Insensitive Keys if possible, but strict for now)
-                        // Expected CSV Headers: Customer, Consignee, Exporter, Transport Mode, Description, Weight, Price
-
-                        const customer = row['Customer'] || row['customer'] || row['Sender'] || 'Unknown';
-                        const consignee = row['Consignee'] || row['consignee'] || row['Receiver'] || 'Unknown';
-                        const exporter = row['Exporter'] || row['exporter'] || row['Sender'] || 'Unknown';
-                        const transport_mode = row['Transport Mode'] || row['transport_mode'] || 'SEA';
-                        const description = row['Description'] || row['description'] || 'Import Goods';
-                        const weight = row['Weight'] || row['weight'] || '0';
-                        const price = parseFloat(row['Price'] || row['price'] || '0');
-
-                        // Default addresses based on name (mock logic or empty)
-                        const origin = exporter;
-                        const destination = consignee;
-
-                        // Insert Shipment
-                        await pool.query(
-                            `INSERT INTO shipments (
+                // Insert Shipment
+                await pool.query(
+                    `INSERT INTO shipments (
                                 id, customer, origin, destination, status, progress, 
                                 sender_name, receiver_name, description, weight, price, transport_mode
                             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-                            [
-                                id, customer, origin, destination, status, progress,
-                                exporter, consignee, description, weight, price, transport_mode
-                            ]
-                        );
-
-                        // Auto-Generate Invoice
-                        const invoiceId = `INV-${new Date().getFullYear()}${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
-
-                        // Generate PDF (Async but we await it to ensure file creation)
-                        let invoicePath = null;
-                        try {
-                            const invoiceData = {
-                                receiver_name: consignee,
-                                customer: customer,
-                                receiver_address: destination,
-                                destination: destination,
-                                description: description,
-                                price: price
-                            };
-                            invoicePath = await generateInvoicePDF(invoiceData, invoiceId);
-                        } catch (pdfError) {
-                            console.error('CSV Import PDF Error:', pdfError);
-                        }
-
-                        await pool.query(
-                            'INSERT INTO invoices (id, shipment_id, amount, status, file_path) VALUES ($1, $2, $3, $4, $5)',
-                            [invoiceId, id, price, 'Pending', invoicePath]
-                        );
-
-                        successCount++;
-                        importedShipments.push(id);
-
-                    } catch (rowError) {
-                        console.error('Error importing row:', row, rowError);
-                        failureCount++;
-                    }
-                }
-
-                await pool.query('COMMIT');
-
-                // Log Action
-                await pool.query(
-                    'INSERT INTO audit_logs (user_id, action, details, entity_type, entity_id) VALUES ($1, $2, $3, $4, $5)',
-                    [req.user.id, 'IMPORT_SHIPMENTS', `Imported ${successCount} shipments`, 'BATCH', 'CSV']
+                    [
+                        id, customer, origin, destination, status, progress,
+                        exporter, consignee, description, weight, price, transport_mode
+                    ]
                 );
 
-                res.json({
-                    message: 'Import processed',
-                    success: successCount,
-                    failed: failureCount,
-                    imported_ids: importedShipments
-                });
+                // Auto-Generate Invoice record
+                const invoiceId = `INV-${new Date().getFullYear()}${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
 
-            } catch (err) {
-                await pool.query('ROLLBACK');
-                console.error('CSV Import Error:', err);
-                res.status(500).json({ error: 'Internal server error during import' });
+                // Try to generate PDF
+                let invoicePath = null;
+                try {
+                    const invoiceData = {
+                        receiver_name: consignee,
+                        customer: customer,
+                        receiver_address: destination,
+                        destination: destination,
+                        description: description,
+                        price: price
+                    };
+                    invoicePath = await generateInvoicePDF(invoiceData, invoiceId);
+                } catch (pdfError) {
+                    console.error('Import PDF Gen Error (non-fatal):', pdfError.message);
+                }
+
+                await pool.query(
+                    'INSERT INTO invoices (id, shipment_id, amount, status, file_path) VALUES ($1, $2, $3, $4, $5)',
+                    [invoiceId, id, price, 'Pending', invoicePath]
+                );
+
+                successCount++;
+                importedShipments.push(id);
+
+            } catch (rowError) {
+                console.error('Error importing row:', row, rowError);
+                failureCount++;
+                errors.push(`Row error: ${rowError.message}`);
             }
+        }
+
+        await pool.query('COMMIT');
+
+        // Log Action
+        await pool.query(
+            'INSERT INTO audit_logs (user_id, action, details, entity_type, entity_id) VALUES ($1, $2, $3, $4, $5)',
+            [req.user.id, 'IMPORT_SHIPMENTS', `Imported ${successCount} shipments`, 'BATCH', 'EXCEL']
+        );
+
+        res.json({
+            message: 'Import processed',
+            success: successCount,
+            failed: failureCount,
+            errors: errors.length > 0 ? errors : undefined,
+            imported_ids: importedShipments
         });
+
+    } catch (err) {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        await pool.query('ROLLBACK');
+        console.error('Excel Import Error:', err);
+        res.status(500).json({ error: 'Internal server error during import: ' + err.message });
+    }
 });
 
 // Get all shipments
@@ -263,6 +269,10 @@ router.post('/', authenticateToken, shipmentUpload, async (req, res) => {
         const origin = sender_address ? sender_address.split('\n')[0] : '';
         const destination = receiver_address ? receiver_address.split('\n')[0] : '';
 
+        // Handle case where numeric fields might be undefined or empty string
+        const safePrice = price ? parseFloat(price) : 0;
+        const safeWeight = weight || '0';
+
         // Begin transaction
         await pool.query('BEGIN');
 
@@ -280,7 +290,7 @@ router.post('/', authenticateToken, shipmentUpload, async (req, res) => {
         const shipmentValues = [
             id, customer, origin, destination, status, progress,
             sender_name, sender_address, receiver_name, receiver_address,
-            description, weight, dimensions, price,
+            description, safeWeight, dimensions, safePrice,
             date, expected_delivery_date, transport_mode,
             driver || null, vehicle_id || null
         ];
@@ -308,16 +318,13 @@ router.post('/', authenticateToken, shipmentUpload, async (req, res) => {
         // Generate PDF
         let invoicePath = null;
         try {
-            // Need to pass shipment data. We have 'shipmentValues' but it's an array.
-            // Let's verify what shipment data we have.
-            // We have variables: sender_name, receiver_name, description, price, etc.
             const invoiceData = {
                 receiver_name: receiver_name,
                 customer: customer,
                 receiver_address: receiver_address,
                 destination: destination,
                 description: description,
-                price: price
+                price: safePrice
             };
             invoicePath = await generateInvoicePDF(invoiceData, invoiceId);
         } catch (pdfError) {
@@ -327,7 +334,7 @@ router.post('/', authenticateToken, shipmentUpload, async (req, res) => {
 
         await pool.query(
             'INSERT INTO invoices (id, shipment_id, amount, status, file_path) VALUES ($1, $2, $3, $4, $5)',
-            [invoiceId, id, price || 0, 'Pending', invoicePath]
+            [invoiceId, id, safePrice, 'Pending', invoicePath]
         );
 
         // Log action
@@ -397,14 +404,11 @@ router.put('/:id', authenticateToken, async (req, res) => {
         const updatedShipment = result.rows[0];
 
         // AUTO-CREATE DELIVERY NOTE
-        // "When the delivery beening proceed then the delivery notes should be made automattically"
-        // Trigger: Status becomes 'In Transit'
         if (status === 'In Transit') {
             const checkDN = await pool.query('SELECT id FROM delivery_notes WHERE shipment_id = $1', [id]);
             if (checkDN.rows.length === 0) {
                 const dnId = `DN-${new Date().getFullYear()}${Math.floor(Math.random() * 100000).toString().padStart(6, '0')}`;
 
-                // Create Delivery Note
                 await pool.query(
                     `INSERT INTO delivery_notes (
                         id, shipment_id, consignee, exporter, details_location, issued_by, status
@@ -414,12 +418,11 @@ router.put('/:id', authenticateToken, async (req, res) => {
                         id,
                         updatedShipment.receiver_name || updatedShipment.destination,
                         updatedShipment.sender_name || updatedShipment.customer,
-                        updatedShipment.destination, // using destination as details_location default
+                        updatedShipment.destination,
                         req.user.username
                     ]
                 );
 
-                // Create Delivery Note Job Map
                 await pool.query(
                     'INSERT INTO delivery_note_jobs (delivery_note_id, job_no) VALUES ($1, $2)',
                     [dnId, id]
@@ -454,7 +457,6 @@ router.delete('/:id', authenticateToken, authorizeRole(['Administrator', 'Cleara
 
         res.json({ message: 'Shipment deleted successfully' });
 
-        // Log action
         await pool.query(
             'INSERT INTO audit_logs (user_id, action, details, entity_type, entity_id) VALUES ($1, $2, $3, $4, $5)',
             [req.user.id, 'DELETE_SHIPMENT', `Deleted shipment ${id}`, 'SHIPMENT', id]
