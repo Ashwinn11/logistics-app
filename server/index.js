@@ -13,6 +13,8 @@ import consigneeRoutes from './routes/consignees.js';
 import customerRoutes from './routes/customers.js';
 import exporterRoutes from './routes/exporters.js';
 import clearanceRoutes from './routes/clearance.js';
+import vendorRoutes from './routes/vendors.js';
+import deliveryAgentRoutes from './routes/delivery_agents.js';
 
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -56,6 +58,8 @@ app.use('/api/consignees', consigneeRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/exporters', exporterRoutes);
 app.use('/api/clearance', clearanceRoutes);
+app.use('/api/vendors', vendorRoutes);
+app.use('/api/delivery-agents', deliveryAgentRoutes);
 
 
 // Health check
