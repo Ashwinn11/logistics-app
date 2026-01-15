@@ -501,7 +501,25 @@ router.put('/:id', authenticateToken, async (req, res) => {
 router.delete('/:id', authenticateToken, authorizeRole(['Administrator', 'Clearance Manager']), async (req, res) => {
     try {
         const { id } = req.params;
+
+        await pool.query('BEGIN');
+
+        // 1. Delete related Invoices
+        await pool.query('DELETE FROM invoices WHERE shipment_id = $1', [id]);
+
+        // 2. Delete related Delivery Note Jobs (references this shipment)
+        await pool.query('DELETE FROM delivery_note_jobs WHERE job_no = $1', [id]);
+
+        // 3. Delete related Delivery Notes
+        await pool.query('DELETE FROM delivery_notes WHERE shipment_id = $1', [id]);
+
+        // 4. Delete related Clearance Schedules
+        await pool.query('DELETE FROM clearance_schedules WHERE job_id = $1', [id]);
+
+        // 5. Delete the Shipment
         const result = await pool.query('DELETE FROM shipments WHERE id = $1 RETURNING *', [id]);
+
+        await pool.query('COMMIT');
 
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Shipment not found' });
@@ -511,8 +529,9 @@ router.delete('/:id', authenticateToken, authorizeRole(['Administrator', 'Cleara
 
         await logActivity(req.user.id, 'DELETE_SHIPMENT', `Deleted shipment ${id}`, 'SHIPMENT', id);
     } catch (error) {
+        await pool.query('ROLLBACK');
         console.error('Delete shipment error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error: ' + error.message });
     }
 });
 
