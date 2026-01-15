@@ -83,31 +83,53 @@ router.post('/import', authenticateToken, upload.single('file'), async (req, res
         const sheet = workbook.Sheets[sheetName];
         const data = XLSX.utils.sheet_to_json(sheet);
 
+        if (data.length === 0) {
+            fs.unlinkSync(req.file.path);
+            return res.status(400).json({ error: 'File appears to be empty or contains no data rows.' });
+        }
+
         let successCount = 0;
         let errors = [];
 
         for (const row of data) {
             const normalizedRow = {};
+            const noSpaceRow = {};
+
             Object.keys(row).forEach(key => {
-                const cleanKey = key.toLowerCase().trim().replace(/[_\/]/g, ' ').replace(/[^a-z0-9 ]/g, '');
+                // Robust cleaning:
+                // 1. Lowercase, trim
+                // 2. Replace _ / with space
+                // 3. Remove non standard chars
+                // 4. Collapse spaces
+                const cleanKey = key.toLowerCase().trim()
+                    .replace(/[_\/]/g, ' ')
+                    .replace(/[^a-z0-9 ]/g, '')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+
                 normalizedRow[cleanKey] = row[key];
+                noSpaceRow[cleanKey.replace(/\s/g, '')] = row[key];
             });
 
-            // Map headers based on user request and common variations
-            // Header: Exporter Name -> name
-            const name = normalizedRow['exporter name'] || normalizedRow['name'] || normalizedRow['exporter'] || normalizedRow['company'] || normalizedRow['exporter name company'];
+            // Map headers - try standard normalized keys first, then condensed keys
+            // Exporter Name
+            const name = normalizedRow['exporter name'] || normalizedRow['name'] || normalizedRow['exporter'] || normalizedRow['company'] || normalizedRow['exporter name company'] ||
+                noSpaceRow['exportername'] || noSpaceRow['name'] || noSpaceRow['exporter'] || noSpaceRow['company'];
 
-            // Header: Contact No. -> phone
-            const phone = normalizedRow['contact no'] || normalizedRow['contact number'] || normalizedRow['phone'] || normalizedRow['mobile'];
+            // Phone
+            const phone = normalizedRow['contact no'] || normalizedRow['contact number'] || normalizedRow['phone'] || normalizedRow['mobile'] ||
+                noSpaceRow['contactno'] || noSpaceRow['contactnumber'] || noSpaceRow['phone'] || noSpaceRow['mobile'];
 
-            // Header: Mail -> email
-            const email = normalizedRow['mail'] || normalizedRow['email'] || normalizedRow['e-mail'];
+            // Email
+            const email = normalizedRow['mail'] || normalizedRow['email'] || normalizedRow['e-mail'] ||
+                noSpaceRow['mail'] || noSpaceRow['email'];
 
-            // Header: Address -> address
-            const address = normalizedRow['address'] || normalizedRow['location'];
+            // Address
+            const address = normalizedRow['address'] || normalizedRow['location'] ||
+                noSpaceRow['address'] || noSpaceRow['location'];
 
-            // Optional: Country if present
-            const country = normalizedRow['country'];
+            // Country
+            const country = normalizedRow['country'] || noSpaceRow['country'];
 
             if (!name) continue;
 
@@ -115,8 +137,6 @@ router.post('/import', authenticateToken, upload.single('file'), async (req, res
                 // Check if exists
                 const checkRes = await pool.query('SELECT id FROM exporters WHERE name = $1', [name]);
                 if (checkRes.rows.length > 0) {
-                    // Exporter exists, maybe update? For now sticking to insert if new.
-                    // Or we could update contact details if missing.
                     errors.push(`Exporter '${name}' already exists.`);
                     continue;
                 }
@@ -128,7 +148,7 @@ router.post('/import', authenticateToken, upload.single('file'), async (req, res
                         email || null,
                         phone ? String(phone) : null,
                         address || null,
-                        country || null // If they provide country separately, good. If not, address is what we have.
+                        country || null
                     ]
                 );
                 successCount++;
@@ -138,6 +158,14 @@ router.post('/import', authenticateToken, upload.single('file'), async (req, res
         }
 
         fs.unlinkSync(req.file.path);
+
+        if (successCount === 0 && errors.length === 0) {
+            // Debug info if no rows were processed
+            const headers = data.length > 0 ? Object.keys(data[0]) : [];
+            return res.status(400).json({
+                error: `No valid exporters found. Checked headers: [${headers.join(', ')}]. Expected columns like 'Exporter Name' or 'Company'.`
+            });
+        }
 
         await logActivity(req.user.id, 'IMPORT_EXPORTERS', `Imported ${successCount} exporters`, 'EXPORTER', 'BATCH');
 
