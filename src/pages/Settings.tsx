@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import Layout from '../components/Layout';
 import {
-    Users, Truck, Briefcase, CreditCard,
+    Users, Briefcase, CreditCard,
     Shield, Zap
 } from 'lucide-react';
 
 import ConsigneesSettings from './settings/ConsigneesSettings';
 import CustomersSettings from './settings/CustomersSettings';
 import ExportersSettings from './settings/ExportersSettings';
-import VehicleSettings from './settings/VehicleSettings';
+
 
 const Settings: React.FC = () => {
     const [activeTab, setActiveTab] = useState('Consignees');
@@ -17,7 +17,7 @@ const Settings: React.FC = () => {
         { id: 'Consignees', label: 'Consignees', icon: Users },
         { id: 'Customers', label: 'Customers', icon: Users },
         { id: 'Exporters', label: 'Exporters', icon: Briefcase },
-        { id: 'Vehicles', label: 'Vehicles', icon: Truck },
+
         { id: 'Delivery Agents', label: 'Delivery Agents', icon: Users },
         { id: 'Users', label: 'Users', icon: Shield },
         { id: 'Vendors', label: 'Vendors', icon: Briefcase },
@@ -33,8 +33,7 @@ const Settings: React.FC = () => {
                 return <CustomersSettings />;
             case 'Exporters':
                 return <ExportersSettings />;
-            case 'Vehicles':
-                return <VehicleSettings />;
+
             // ... Add other cases as needed
             default:
                 return (
