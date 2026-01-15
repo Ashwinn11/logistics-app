@@ -256,11 +256,11 @@ const Shipments: React.FC = () => {
                         <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
                     </div>
                 ) : (
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-2">
                         {shipments.map((shipment, index) => (
                             <div
                                 key={shipment.id}
-                                className={`glass-card px-6 py-4 flex items-center justify-between hover:shadow-md transition-all duration-300 animate-slide-in ${selectedIds.includes(shipment.id) ? 'ring-2 ring-primary-500 bg-primary-50/50' : ''}`}
+                                className={`bg-white border border-gray-100 rounded-lg px-4 py-3 flex items-center justify-between hover:border-primary-200 hover:shadow-sm transition-all duration-200 animate-slide-in ${selectedIds.includes(shipment.id) ? 'ring-1 ring-primary-500 bg-primary-50/30' : ''}`}
                                 style={{ animationDelay: `${index * 0.01}s` }}
                                 onClick={() => navigate(`/shipments/${shipment.id}`)}
                             >
