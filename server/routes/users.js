@@ -265,4 +265,22 @@ router.post('/:id/photo', (req, res, next) => {
     }
 });
 
+// Remove profile photo
+router.delete('/:id/photo', async (req, res) => {
+    const { id } = req.params;
+
+    // Authorization Check: Admin or Self
+    if (req.user.role !== 'Administrator' && req.user.id !== id) {
+        return res.status(403).json({ error: 'Access denied' });
+    }
+
+    try {
+        await pool.query('UPDATE users SET photo_url = NULL WHERE id = $1', [id]);
+        res.json({ message: 'Photo removed successfully' });
+    } catch (error) {
+        console.error('Error removing photo:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 export default router;

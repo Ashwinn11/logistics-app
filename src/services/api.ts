@@ -103,6 +103,7 @@ export const usersAPI = {
     uploadPhoto: (id: string, data: FormData) => api.post(`/users/${id}/photo`, data, {
         headers: { 'Content-Type': 'multipart/form-data' }
     }),
+    removePhoto: (id: string) => api.delete(`/users/${id}/photo`),
     delete: (id: string) => api.delete(`/users/${id}`),
 };
 

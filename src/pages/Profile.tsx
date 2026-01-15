@@ -124,6 +124,25 @@ const Profile: React.FC = () => {
     };
 
     // Photo Upload
+    const handleRemovePhoto = async () => {
+        if (!user || !user.photo_url) return;
+        if (!confirm("Are you sure you want to remove your profile photo?")) return;
+
+        setLoading(true);
+        setMessage(null);
+
+        try {
+            await usersAPI.removePhoto(user.id);
+            await refreshUser();
+            setMessage({ type: 'success', text: 'Photo removed successfully.' });
+        } catch (error: any) {
+            console.error('Remove photo error:', error);
+            setMessage({ type: 'error', text: 'Failed to remove photo.' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleFileSelect = () => {
         fileInputRef.current?.click();
     };
@@ -263,8 +282,16 @@ const Profile: React.FC = () => {
                                             onClick={handleFileSelect}
                                             className="px-4 py-2 bg-purple-600 text-white text-xs font-bold rounded shadow-sm hover:bg-purple-700 transition-colors uppercase tracking-wide"
                                         >
-                                            Select A New Photo
+                                            Add Photo
                                         </button>
+                                        {user?.photo_url && (
+                                            <button
+                                                onClick={handleRemovePhoto}
+                                                className="px-4 py-2 bg-white text-red-600 border border-red-200 text-xs font-bold rounded shadow-sm hover:bg-red-50 transition-colors uppercase tracking-wide"
+                                            >
+                                                Remove Photo
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </div>
