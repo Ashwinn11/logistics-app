@@ -15,7 +15,7 @@ interface User {
 }
 
 const formatLastActive = (dateStr?: string) => {
-    if (!dateStr) return 'Inactive (Never)';
+    if (!dateStr) return 'Inactive (Never logged in)';
     const date = new Date(dateStr);
     const now = new Date();
     const diff = (now.getTime() - date.getTime()) / 1000; // seconds
