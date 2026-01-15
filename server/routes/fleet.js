@@ -162,6 +162,18 @@ router.put('/:id', authenticateToken, async (req, res) => {
     }
 });
 
+// Delete all vehicles
+router.delete('/delete-all', authenticateToken, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM vehicles');
+        // await logActivity(req.user.id, 'DELETE_ALL_VEHICLES', 'Deleted all vehicles', 'VEHICLE', 'ALL');
+        res.json({ message: 'All vehicles deleted successfully' });
+    } catch (error) {
+        console.error('Delete all vehicles error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Delete vehicle
 router.delete('/:id', authenticateToken, async (req, res) => {
     try {

@@ -80,6 +80,7 @@ export const fleetAPI = {
     create: (data: any) => api.post('/fleet', data),
     update: (id: string, data: any) => api.put(`/fleet/${id}`, data),
     delete: (id: string) => api.delete(`/fleet/${id}`),
+    deleteAll: () => api.delete('/fleet/delete-all'),
     import: (formData: FormData) => api.post('/fleet/import', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
     }),
@@ -129,6 +130,7 @@ export const consigneesAPI = {
     create: (data: any) => api.post('/consignees', data),
     update: (id: string, data: any) => api.put(`/consignees/${id}`, data),
     delete: (id: string) => api.delete(`/consignees/${id}`),
+    deleteAll: () => api.delete('/consignees/delete-all'),
     import: (formData: FormData) => api.post('/consignees/import', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
     }),
@@ -140,6 +142,7 @@ export const customersAPI = {
     create: (data: any) => api.post('/customers', data),
     update: (id: string, data: any) => api.put(`/customers/${id}`, data),
     delete: (id: string) => api.delete(`/customers/${id}`),
+    deleteAll: () => api.delete('/customers/delete-all'),
     import: (formData: FormData) => api.post('/customers/import', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
     }),
@@ -151,6 +154,7 @@ export const exportersAPI = {
     create: (data: any) => api.post('/exporters', data),
     update: (id: string, data: any) => api.put(`/exporters/${id}`, data),
     delete: (id: string) => api.delete(`/exporters/${id}`),
+    deleteAll: () => api.delete('/exporters/delete-all'),
     import: (formData: FormData) => api.post('/exporters/import', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
     }),

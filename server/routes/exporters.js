@@ -152,6 +152,18 @@ router.post('/import', authenticateToken, upload.single('file'), async (req, res
     }
 });
 
+// Delete all exporters
+router.delete('/delete-all', authenticateToken, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM exporters');
+        await logActivity(req.user.id, 'DELETE_ALL_EXPORTERS', 'Deleted all exporters', 'EXPORTER', 'ALL');
+        res.json({ message: 'All exporters deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting all exporters:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Delete exporter
 router.delete('/:id', authenticateToken, async (req, res) => {
     try {

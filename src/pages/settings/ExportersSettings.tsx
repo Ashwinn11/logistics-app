@@ -140,6 +140,24 @@ const ExportersSettings: React.FC = () => {
                         <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleFileUpload} disabled={importing} />
                     </label>
                     <button
+                        onClick={async () => {
+                            if (window.confirm('Are you sure you want to DELETE ALL exporters? This action cannot be undone.')) {
+                                try {
+                                    await exportersAPI.deleteAll();
+                                    fetchExporters();
+                                    alert('All exporters deleted successfully');
+                                } catch (error) {
+                                    console.error('Failed to delete all', error);
+                                    alert('Failed to delete all exporters');
+                                }
+                            }
+                        }}
+                        className="px-4 py-2 bg-red-50 text-red-600 font-semibold rounded-lg shadow-sm hover:bg-red-100 transition-colors flex items-center gap-2 text-sm"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                        Delete All
+                    </button>
+                    <button
                         onClick={() => {
                             setEditingId(null);
                             setFormData({ name: '', email: '', phone: '', country: '', address: '' });

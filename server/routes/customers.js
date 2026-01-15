@@ -127,6 +127,18 @@ router.post('/import', authenticateToken, upload.single('file'), async (req, res
     }
 });
 
+// Delete all customers
+router.delete('/delete-all', authenticateToken, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM customers');
+        await logActivity(req.user.id, 'DELETE_ALL_CUSTOMERS', 'Deleted all customers', 'CUSTOMER', 'ALL');
+        res.json({ message: 'All customers deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting all customers:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Delete customer
 router.delete('/:id', authenticateToken, async (req, res) => {
     try {

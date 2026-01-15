@@ -130,6 +130,18 @@ router.put('/:id', authenticateToken, async (req, res) => {
     }
 });
 
+// Delete all consignees
+router.delete('/delete-all', authenticateToken, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM consignees');
+        await logActivity(req.user.id, 'DELETE_ALL_CONSIGNEES', 'Deleted all consignees', 'CONSIGNEE', 'ALL');
+        res.json({ message: 'All consignees deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting all consignees:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Delete consignee
 router.delete('/:id', authenticateToken, async (req, res) => {
     try {
