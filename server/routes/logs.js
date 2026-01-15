@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
     try {
         const { search, date } = req.query;
         let query = `
-            SELECT a.*, u.username as performed_by
+            SELECT a.*, u.username as performed_by, u.role as user_role
             FROM audit_logs a
             LEFT JOIN users u ON a.user_id = u.id
         `;

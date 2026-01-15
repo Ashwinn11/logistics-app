@@ -15,6 +15,7 @@ interface Log {
     entity_id: string;
     created_at: string;
     performed_by: string;
+    user_role?: string;
 }
 
 const Logs: React.FC = () => {
@@ -135,9 +136,16 @@ const Logs: React.FC = () => {
                                             <span className="text-xs text-gray-400">ID: {log.entity_id}</span>
                                         </td>
                                         <td className="py-4 px-6">
-                                            <div className="flex items-center gap-2">
-                                                <User className="w-4 h-4 text-gray-400" />
-                                                <span className="text-sm text-gray-700">{log.performed_by || 'Unknown'}</span>
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                                                    <User className="w-4 h-4 text-gray-500" />
+                                                </div>
+                                                <div>
+                                                    <span className="text-sm font-medium text-gray-900 block">{log.performed_by || 'Unknown'}</span>
+                                                    {log.user_role && (
+                                                        <span className="text-xs text-gray-500 block">{log.user_role}</span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </td>
                                         <td className="py-4 px-6">
