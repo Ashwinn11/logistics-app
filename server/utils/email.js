@@ -1,77 +1,60 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+
 dotenv.config();
 
-// Create reusable transporter object using the default SMTP transport
+if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+  console.warn('⚠️  EMAIL_USER or EMAIL_PASS not set. Emails will not be sent.');
+}
+
 const transporter = nodemailer.createTransport({
-    service: 'gmail', // Use 'gmail' or configure host/port for other providers
-    auth: {
-        user: process.env.EMAIL_USER || 'your-email@gmail.com',
-        pass: process.env.EMAIL_PASS || 'your-app-password'
-    }
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
 });
 
-/**
- * Send an email
- * @param {string} to - Recipient email
- * @param {string} subject - Email subject
- * @param {string} text - Plain text body
- * @param {string} html - HTML body (optional)
- */
 export const sendEmail = async (to, subject, text, html) => {
-    // Check for default credentials
-    if (process.env.EMAIL_USER === 'your-email@gmail.com' || process.env.EMAIL_PASS === 'your-app-password') {
-        console.warn('WARNING: Email not sent. You are using default placeholder credentials in server/.env.');
-        console.warn('Please update EMAIL_USER and EMAIL_PASS with your actual Gmail address and App Password.');
-        return;
-    }
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) return;
 
-    try {
-        console.log(`Sending email to: ${to} | Subject: ${subject} | From: ${process.env.EMAIL_FROM}`);
-        const info = await transporter.sendMail({
-            from: process.env.EMAIL_FROM || '"Seaflow Logistics" <no-reply@seaflow.com>',
-            to,
-            subject,
-            text,
-            html
-        });
-        console.log('Message sent: %s', info.messageId);
-        return info;
-    } catch (error) {
-        console.error('Error sending email:', error);
-        // In development/demo, we might not have valid credentials, so just log it.
-        // throw error; 
-    }
+  try {
+    const info = await transporter.sendMail({
+      from: `"Seaflow Logistics" <${process.env.EMAIL_USER}>`,
+      to,
+      subject,
+      text,
+      html
+    });
+
+    console.log('📧 Email sent:', info.messageId);
+    return info;
+  } catch (err) {
+    console.error('❌ Email error:', err.message);
+  }
 };
 
 export const sendWelcomeEmail = async (to, username, password) => {
-    const subject = 'Welcome to Seaflow Logistics';
-    const text = `Hello, \n\nYour account has been created.\nUsername: ${username}\nPassword: ${password}\n\nPlease login and change your password immediately.`;
-    const html = `
-        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-            <h2 style="color: #2563eb;">Welcome to Seaflow Logistics</h2>
-            <p>Your account has been successfully created.</p>
-            <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                <p style="margin: 5px 0;"><strong>Username:</strong> ${username}</p>
-                <p style="margin: 5px 0;"><strong>Password:</strong> ${password}</p>
-            </div>
-            <p>Please <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/login">login</a> and change your password immediately.</p>
-        </div>
-    `;
-    await sendEmail(to, subject, text, html);
+  await sendEmail(
+    to,
+    'Welcome to Seaflow Logistics',
+    `Your account is ready.\nUsername: ${username}\nPassword: ${password}`,
+    `
+      <h2>Welcome to Seaflow Logistics</h2>
+      <p><b>Username:</b> ${username}</p>
+      <p><b>Password:</b> ${password}</p>
+      <p>Please log in and change your password.</p>
+    `
+  );
 };
 
 export const sendPasswordResetEmail = async (to, token) => {
-    const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${token}`;
-    const subject = 'Password Reset Request';
-    const text = `Hello, \n\nYou requested a password reset. Click the following link to reset your password: ${resetLink}\n\nThis link will expire in 1 hour.`;
-    const html = `
-        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-            <h2 style="color: #2563eb;">Password Reset Request</h2>
-            <p>You requested a password reset. Click the button below to reset your password:</p>
-            <a href="${resetLink}" style="display: inline-block; background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin: 20px 0;">Reset Password</a>
-            <p style="font-size: 12px; color: #666;">This link will expire in 1 hour.</p>
-        </div>
-    `;
-    await sendEmail(to, subject, text, html);
+  const link = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+
+  await sendEmail(
+    to,
+    'Password Reset',
+    `Reset your password: ${link}`,
+    `<a href="${link}">Reset Password</a>`
+  );
 };
