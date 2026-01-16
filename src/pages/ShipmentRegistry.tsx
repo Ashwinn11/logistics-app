@@ -22,6 +22,7 @@ const ShipmentRegistry: React.FC = () => {
     const [activeTab, setActiveTab] = useState('Details');
     const [editingSection, setEditingSection] = useState<string | null>(null);
     const [editFormData, setEditFormData] = useState<any>({});
+    const [previewDoc, setPreviewDoc] = useState<any | null>(null);
 
     // Dropdown Data State
     const [consigneesList, setConsigneesList] = useState<any[]>([]);
@@ -537,15 +538,13 @@ const ShipmentRegistry: React.FC = () => {
                                     </td>
                                     <td className="py-3 px-4 text-right">
                                         <div className="flex justify-end gap-2">
-                                            <a
-                                                href={`http://localhost:5001/${doc.file_path}`}
-                                                target="_blank"
-                                                rel="noreferrer"
+                                            <button
+                                                onClick={() => setPreviewDoc(doc)}
                                                 className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
                                                 title="View"
                                             >
                                                 <Search className="w-4 h-4" />
-                                            </a>
+                                            </button>
                                             {/* Download Link (typically same as view but with download attr if supported, or same action) */}
                                             <a
                                                 href={`http://localhost:5001/${doc.file_path}`}
@@ -1029,6 +1028,34 @@ const ShipmentRegistry: React.FC = () => {
 
                 </div>
             </div>
+
+            {/* Preview Modal */}
+            {previewDoc && (
+                <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-lg w-full max-w-6xl h-[90vh] flex flex-col shadow-2xl animate-scale-in">
+                        <div className="flex justify-between items-center p-4 border-b">
+                            <div>
+                                <h3 className="font-bold text-gray-900">{previewDoc.file_name}</h3>
+                                <p className="text-xs text-gray-500 uppercase">{previewDoc.document_type || 'Document'}</p>
+                            </div>
+                            <button onClick={() => setPreviewDoc(null)} className="p-2 hover:bg-gray-100 rounded-full text-gray-500 hover:text-gray-700 transition-colors">
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+                        <div className="flex-1 bg-gray-100 p-1 relative">
+                            {previewDoc.file_type?.startsWith('image/') ? (
+                                <img src={`http://localhost:5001/${previewDoc.file_path}`} alt="Preview" className="w-full h-full object-contain" />
+                            ) : (
+                                <iframe
+                                    src={`http://localhost:5001/${previewDoc.file_path}`}
+                                    className="w-full h-full border-none"
+                                    title="Document Preview"
+                                />
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <ScheduleClearanceDrawer
                 isOpen={isScheduleDrawerOpen}
