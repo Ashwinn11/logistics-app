@@ -577,4 +577,38 @@ router.post('/:id/documents', authenticateToken, upload.single('file'), async (r
     }
 });
 
+// Delete Document from shipment
+router.delete('/:id/documents/:docId', authenticateToken, async (req, res) => {
+    try {
+        const { id, docId } = req.params;
+
+        const docResult = await pool.query('SELECT * FROM shipment_documents WHERE id = $1 AND shipment_id = $2', [docId, id]);
+
+        if (docResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Document not found' });
+        }
+
+        const doc = docResult.rows[0];
+
+        if (doc.file_path && fs.existsSync(doc.file_path)) {
+            try {
+                fs.unlinkSync(doc.file_path);
+            } catch (err) {
+                console.error('Error deleting file:', err);
+            }
+        }
+
+        await pool.query('DELETE FROM shipment_documents WHERE id = $1', [docId]);
+
+        await logActivity(req.user.id, 'DELETE_DOCUMENT', `Deleted document ${doc.file_name} from shipment ${id}`, 'SHIPMENT', id);
+
+        const documentsResult = await pool.query('SELECT * FROM shipment_documents WHERE shipment_id = $1 ORDER BY uploaded_at DESC', [id]);
+        res.json(documentsResult.rows);
+
+    } catch (error) {
+        console.error('Delete document error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
 export default router;
