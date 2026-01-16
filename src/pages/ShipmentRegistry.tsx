@@ -3,9 +3,9 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { shipmentsAPI, consigneesAPI, exportersAPI, clearanceAPI } from '../services/api';
 import {
-    Search, Plus, Ship,
+    Search, Plus,
     FileText,
-    MoreVertical, Calendar,
+    MoreVertical,
     Anchor, Plane, Truck, Package, X
 } from 'lucide-react';
 import ScheduleClearanceDrawer from '../components/ScheduleClearanceDrawer';
@@ -151,9 +151,7 @@ const ShipmentRegistry: React.FC = () => {
         }
     };
 
-    const handleScheduleClick = () => {
-        setIsScheduleDrawerOpen(true);
-    };
+
 
     const handleScheduleSave = async (data: any) => {
         try {
@@ -448,8 +446,8 @@ const ShipmentRegistry: React.FC = () => {
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
                                 className={`pb-3 border-b-2 transition-colors ${activeTab === tab
-                                        ? 'border-indigo-600 text-indigo-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                                    ? 'border-indigo-600 text-indigo-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700'
                                     }`}
                             >
                                 {tab}
