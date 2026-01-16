@@ -135,7 +135,7 @@ const ShipmentRegistry: React.FC = () => {
                 sender_name: formData.exporter,
                 receiver_name: formData.consignee,
                 transport_mode: formData.transport_mode,
-                description: formData.service,
+                service: formData.service,
                 shipment_type: formData.shipment_type,
                 billing_contact: formData.billing_contact_same ? formData.consignee : formData.billing_contact
             };
@@ -172,6 +172,7 @@ const ShipmentRegistry: React.FC = () => {
             apiData.append('transport_mode', formData.transport_mode);
 
             // Backend requires these, so we provide defaults or mapped values
+            apiData.append('service', formData.service);
             apiData.append('description', `${formData.service}`);
             apiData.append('weight', '0'); // default
             apiData.append('price', '0');  // default
@@ -553,7 +554,7 @@ const ShipmentRegistry: React.FC = () => {
                             </div>
                             <div>
                                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Service</p>
-                                <p className="font-medium text-gray-900">{selectedJob.description || 'Form Filling & Clearance'}</p>
+                                <p className="font-medium text-gray-900">{selectedJob.service || (['Form Filling', 'Clearance', 'Form Filling & Clearance', 'DR'].includes(selectedJob.description) ? selectedJob.description : 'Clearance')}</p>
                             </div>
                         </div>
                         <button className="px-4 py-2 bg-black text-white text-sm font-bold rounded flex items-center gap-2 hover:bg-gray-800 transition-colors shadow-lg">

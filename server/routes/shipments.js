@@ -298,7 +298,7 @@ router.post('/', authenticateToken, shipmentUpload, async (req, res) => {
             receiver_name, receiver_address,
             description, weight, dimensions, price,
             date, expected_delivery_date, transport_mode,
-            driver, vehicle_id
+            driver, vehicle_id, service
         } = req.body;
 
         const id = await generateShipmentId();
@@ -323,8 +323,8 @@ router.post('/', authenticateToken, shipmentUpload, async (req, res) => {
                 sender_name, sender_address, receiver_name, receiver_address,
                 description, weight, dimensions, price,
                 date, expected_delivery_date, transport_mode,
-                driver, vehicle_id
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+                driver, vehicle_id, service
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
             RETURNING *
         `;
 
@@ -333,7 +333,7 @@ router.post('/', authenticateToken, shipmentUpload, async (req, res) => {
             sender_name, sender_address, receiver_name, receiver_address,
             description, safeWeight, dimensions, safePrice,
             date, expected_delivery_date, transport_mode,
-            driver || null, vehicle_id || null
+            driver || null, vehicle_id || null, service
         ];
 
         const shipmentResult = await pool.query(shipmentQuery, shipmentValues);
@@ -405,7 +405,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
             expense_macl, expense_mpl, expense_mcs, expense_transportation, expense_liner,
             house_bl, vessel, delivery_agent,
             office, cargo_type, unloaded_date,
-            shipment_type, billing_contact
+            shipment_type, billing_contact, service
         } = req.body;
 
         await pool.query('BEGIN');
@@ -448,6 +448,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
                  unloaded_date = COALESCE($35, unloaded_date),
                  shipment_type = COALESCE($36, shipment_type),
                  billing_contact = COALESCE($37, billing_contact),
+                 service = COALESCE($38, service),
                  updated_at = CURRENT_TIMESTAMP
              WHERE id = $16
              RETURNING *`,
@@ -461,7 +462,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
                 expense_macl, expense_mpl, expense_mcs, expense_transportation, expense_liner,
                 house_bl, vessel, delivery_agent,
                 office, cargo_type, unloaded_date,
-                shipment_type, billing_contact
+                shipment_type, billing_contact, service
             ]
         );
 
