@@ -18,6 +18,7 @@ const ShipmentRegistry: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [isScheduleDrawerOpen, setIsScheduleDrawerOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState('Details');
 
     // Dropdown Data State
     const [consigneesList, setConsigneesList] = useState<any[]>([]);
@@ -419,135 +420,229 @@ const ShipmentRegistry: React.FC = () => {
     const renderJobDetails = () => {
         if (!selectedJob) return null;
         return (
-            <div className="h-full flex flex-col animate-fade-in bg-white">
-                {/* Header */}
-                <div className="bg-white border-b border-gray-100 p-8 flex justify-between items-start">
-                    <div>
-                        <div className="flex items-center gap-2 mb-2">
-                            <span className="text-2xl font-bold text-gray-900">{selectedJob.customer || 'Valued Customer'}</span>
-                            <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase border ${getPaymentColor(selectedJob.payment_status)}`}>
-                                {selectedJob.payment_status}
-                            </span>
+            <div className="h-full flex flex-col animate-fade-in bg-white font-sans text-gray-900">
+                {/* Header Section */}
+                <div className="px-8 pt-8 pb-0 border-b border-gray-200">
+                    <div className="flex justify-between items-start mb-6">
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-900 uppercase">
+                                {selectedJob.customer || 'Customer Name'} / {selectedJob.id?.split('-')[1] || 'JOB'}
+                            </h1>
+                            <p className="text-sm text-gray-500 mt-1">
+                                Registered on {new Date(selectedJob.created_at || Date.now()).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                            </p>
                         </div>
-
-                        <p className="text-sm text-gray-500 flex items-center gap-2">
-                            <span>Job No: <span className="font-mono font-bold text-gray-700">{selectedJob.id}</span></span>
-                            <span className="text-gray-300">•</span>
-                            <span>Registered: {new Date(selectedJob.created_at || Date.now()).toLocaleDateString()}</span>
-                        </p>
+                        <div className="flex items-center gap-3">
+                            <div className="text-right">
+                                <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${getPaymentColor(selectedJob.payment_status)}`}>
+                                    {selectedJob.status || 'New'}
+                                </span>
+                            </div>
+                        </div>
                     </div>
-                    <button
-                        onClick={handleScheduleClick}
-                        className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-200 transition-all flex items-center gap-2"
-                    >
-                        <Calendar className="w-4 h-4" />
-                        Schedule Clearance
-                    </button>
+
+                    {/* Tabs */}
+                    <div className="flex gap-8 text-sm font-medium">
+                        {['Details', 'Documents', 'Payments', 'History'].map(tab => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`pb-3 border-b-2 transition-colors ${activeTab === tab
+                                        ? 'border-indigo-600 text-indigo-600'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                                    }`}
+                            >
+                                {tab}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
-                {/* Tabs & Content */}
-                <div className="flex-1 overflow-y-auto p-8 bg-gray-50/50">
-                    {/* Job Summary */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
-                        <div className="flex justify-between items-start mb-6">
+                {/* Content Scrollable Area */}
+                <div className="flex-1 overflow-y-auto p-8 bg-gray-50">
+
+                    {/* Top Stats Row */}
+                    <div className="flex justify-between items-end mb-8">
+                        <div className="flex gap-12">
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900">Job Summary</h3>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase border flex items-center gap-1 ${getModeColor(selectedJob.transport_mode)}`}>
-                                        {getModeIcon(selectedJob.transport_mode)}
-                                        {selectedJob.transport_mode || 'SEA'}
-                                    </span>
-                                    <span className="text-sm text-gray-500">
-                                        / {selectedJob.status || 'Clearance'}
-                                    </span>
-                                </div>
+                                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Job Number</p>
+                                <p className="font-bold text-lg text-gray-900">{selectedJob.id}</p>
                             </div>
-                            <button className="p-2 hover:bg-gray-100 rounded-full text-gray-400 transition-colors">
-                                <MoreVertical className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        {/* Progress Bar */}
-                        <div className="relative pt-4 pb-8">
-                            <div className="overflow-hidden h-2 mb-4 text-xs flex rounded-full bg-gray-100">
-                                <div style={{ width: '40%' }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-indigo-500"></div>
+                            <div>
+                                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Mode</p>
+                                <p className="font-bold text-lg text-gray-900">{selectedJob.transport_mode || 'SEA'}</p>
                             </div>
-                            <div className="flex justify-between text-xs font-semibold text-gray-500 px-1">
-                                <span className="text-indigo-600">Document</span>
-                                <span className="text-indigo-600">Clearance</span>
-                                <span>Accounts</span>
-                                <span>Completed</span>
+                            <div>
+                                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Service</p>
+                                <p className="font-medium text-gray-900">{selectedJob.description || 'Form Filling & Clearance'}</p>
                             </div>
                         </div>
+                        <button className="px-4 py-2 bg-black text-white text-sm font-bold rounded flex items-center gap-2 hover:bg-gray-800 transition-colors shadow-lg">
+                            Send to Accounts
+                        </button>
+                    </div>
 
-                        {/* Exporter / Consignee Block */}
-                        <div className="bg-slate-900 text-white p-8 rounded-2xl shadow-xl relative overflow-hidden">
-                            <div className="relative z-10 grid grid-cols-2 gap-12">
-                                <div>
-                                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-2">Exporter</p>
-                                    <p className="font-bold text-xl tracking-tight">{selectedJob.exporter || 'Exporter Name'}</p>
-                                </div>
-                                <div>
-                                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-2">Consignee</p>
-                                    <p className="font-bold text-xl tracking-tight">{selectedJob.receiver_name || selectedJob.customer}</p>
-                                </div>
-                            </div>
-                            <div className="relative z-10 grid grid-cols-2 gap-12 mt-8 pt-6 border-t border-slate-700/50">
-                                <div>
-                                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">TYPE</p>
-                                    <p className="font-mono text-sm">IMP</p>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">REGISTERED</p>
-                                    <p className="font-mono text-sm">{new Date(selectedJob.created_at || Date.now()).toLocaleDateString()}</p>
-                                </div>
-                            </div>
-
-                            {/* Decorative Background */}
-                            <div className="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 bg-indigo-500 opacity-10 rounded-full blur-3xl"></div>
-                            <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-32 h-32 bg-blue-500 opacity-10 rounded-full blur-2xl"></div>
+                    {/* Progress Bar (Mockup) */}
+                    <div className="mb-8">
+                        <div className="flex justify-between text-xs font-semibold text-gray-500 mb-2 px-1">
+                            <span className="text-indigo-600">Document</span>
+                            <span className="text-indigo-600">Clearance</span>
+                            <span className="">Accounts</span>
+                            <span className="">Completed</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                            <div className="h-full bg-indigo-600 w-1/2"></div>
                         </div>
                     </div>
 
-                    {/* Placeholder for Details Sections */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-                            <h3 className="font-bold text-gray-900 mb-6 flex items-center gap-3">
-                                <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
-                                    <FileText className="w-5 h-5" />
-                                </div>
+                    {/* Dark Info Card */}
+                    <div className="bg-slate-900 text-white rounded-xl p-8 mb-6 shadow-xl">
+                        <div className="grid grid-cols-3 gap-8 mb-8">
+                            <div>
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Exporter</p>
+                                <p className="font-bold text-lg">{selectedJob.exporter || selectedJob.sender_name || '-'}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Type</p>
+                                <p className="font-medium">{selectedJob.shipment_type || 'IMP'}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Registered Date</p>
+                                <p className="font-medium">{new Date(selectedJob.created_at || Date.now()).toLocaleDateString()}</p>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-8">
+                            <div>
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Consignee</p>
+                                <p className="font-medium">{selectedJob.consignee || selectedJob.receiver_name || '-'}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Billing Contact</p>
+                                <p className="font-medium">{selectedJob.billing_contact || '-'}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Job Invoice</p>
+                                <p className="font-medium text-slate-500 italic">Not Generated</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Shipment Invoice Card */}
+                    <div className="bg-white rounded-xl shadow-sm p-8 mb-6 border border-gray-100">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="font-bold text-gray-900 flex items-center gap-3 text-lg">
+                                <FileText className="w-5 h-5 text-gray-400" />
                                 Shipment Invoice
                             </h3>
-                            <div className="space-y-4">
-                                <div className="flex justify-between border-b border-gray-50 pb-3">
-                                    <span className="text-gray-500 text-sm">Invoice No</span>
-                                    <span className="font-mono text-sm font-medium text-gray-900">{selectedJob.invoice_id || selectedJob.invoice?.id || '-'}</span>
-                                </div>
-                                <div className="flex justify-between border-b border-gray-50 pb-3">
-                                    <span className="text-gray-500 text-sm">Items</span>
-                                    <span className="font-medium text-gray-900 text-sm">{selectedJob.description || 'General Cargo'}</span>
-                                </div>
+                            <button className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-50 rounded-full transition-colors"><MoreVertical className="w-5 h-5" /></button>
+                        </div>
+                        <div className="grid grid-cols-3 gap-8">
+                            <div>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Invoice No.</p>
+                                <p className="font-semibold text-gray-900">{selectedJob.invoice_no || '-'}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Cargo Type</p>
+                                <p className="font-semibold text-gray-900 uppercase">GENERAL</p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">No. Items</p>
+                                <p className="font-semibold text-gray-900">{selectedJob.no_of_pkgs || selectedJob.invoice_items || '0'}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Customs Form No.</p>
+                                <p className="font-semibold text-gray-900">{selectedJob.customs_r_form || '-'}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Registered Date</p>
+                                <p className="font-semibold text-gray-900">{new Date(selectedJob.created_at).toLocaleDateString()}</p>
                             </div>
                         </div>
+                    </div>
 
-                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-                            <h3 className="font-bold text-gray-900 mb-6 flex items-center gap-3">
-                                <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
-                                    <Ship className="w-5 h-5" />
-                                </div>
+                    {/* BL/AWB Details Card */}
+                    <div className="bg-white rounded-xl shadow-sm p-8 mb-6 border border-gray-100">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="font-bold text-gray-900 flex items-center gap-3 text-lg">
+                                <FileText className="w-5 h-5 text-gray-400" />
                                 BL/AWB Details
                             </h3>
-                            <div className="space-y-4">
-                                <div className="flex justify-between border-b border-gray-50 pb-3">
-                                    <span className="text-gray-500 text-sm">Master No</span>
-                                    <span className="font-mono text-sm font-medium text-gray-900">{selectedJob.master_bl || '-'}</span>
-                                </div>
-                                <div className="flex justify-between border-b border-gray-50 pb-3">
-                                    <span className="text-gray-500 text-sm">House No</span>
-                                    <span className="font-mono text-sm font-medium text-gray-900">{selectedJob.house_bl || '-'}</span>
-                                </div>
+                            <button className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-50 rounded-full transition-colors"><MoreVertical className="w-5 h-5" /></button>
+                        </div>
+                        <div className="grid grid-cols-3 gap-8 gap-y-8">
+                            <div>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Master No.</p>
+                                <p className="font-semibold text-gray-900">{selectedJob.bl_awb_no || '-'}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">ETD</p>
+                                <p className="font-semibold text-gray-900">{selectedJob.date ? new Date(selectedJob.date).toLocaleDateString() : '-'}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">ETA</p>
+                                <p className="font-semibold text-gray-900">{selectedJob.expected_delivery_date ? new Date(selectedJob.expected_delivery_date).toLocaleDateString() : '-'}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">House No.</p>
+                                <p className="font-semibold text-gray-900">{selectedJob.house_bl || '-'}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Loading Port</p>
+                                <p className="font-semibold text-gray-900 uppercase">{selectedJob.origin || '-'}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Vessel</p>
+                                <p className="font-semibold text-gray-900 uppercase">{selectedJob.vessel || '-'}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Delivery Agent</p>
+                                <p className="font-semibold text-gray-900 uppercase">{selectedJob.delivery_agent || '-'}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Packages</p>
+                                <p className="font-semibold text-gray-900">{selectedJob.no_of_pkgs || '0'} BUNDLES -</p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Package Type</p>
+                                <p className="font-semibold text-gray-900 uppercase">BUNDLES</p>
                             </div>
                         </div>
+                    </div>
+
+                    {/* Containers Card */}
+                    <div className="bg-white rounded-xl shadow-sm p-8 mb-6 border border-gray-100">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="font-bold text-gray-900 flex items-center gap-3 text-lg">
+                                <Package className="w-5 h-5 text-gray-400" />
+                                Containers
+                            </h3>
+                        </div>
+                        <table className="w-full text-sm text-left">
+                            <thead className="text-xs text-gray-500 uppercase bg-gray-50/50 border-b border-gray-100">
+                                <tr>
+                                    <th className="py-3 px-4 font-bold">Number</th>
+                                    <th className="py-3 px-4 font-bold">Size</th>
+                                    <th className="py-3 px-4 font-bold">Unloaded Date</th>
+                                    <th className="py-3 px-4 font-bold text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {selectedJob.container_no ? (
+                                    <tr className="border-b border-gray-50 hover:bg-gray-50">
+                                        <td className="py-4 px-4 font-medium text-gray-900">{selectedJob.container_no}</td>
+                                        <td className="py-4 px-4">{selectedJob.container_type || 'FCL 40'}</td>
+                                        <td className="py-4 px-4">-</td>
+                                        <td className="py-4 px-4 text-right">
+                                            <button className="text-gray-400 hover:text-blue-600 transition-colors"><MoreVertical className="w-4 h-4 ml-auto" /></button>
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    <tr>
+                                        <td colSpan={4} className="py-8 text-center text-gray-400 italic">No containers listed</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
 
                 </div>
