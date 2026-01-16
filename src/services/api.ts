@@ -68,6 +68,9 @@ export const shipmentsAPI = {
     }),
     update: (id: string, data: any) => api.put(`/shipments/${id}`, data),
     delete: (id: string) => api.delete(`/shipments/${id}`),
+    uploadDocument: (id: string, data: FormData) => api.post(`/shipments/${id}/documents`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }),
     import: (data: FormData) => api.post('/shipments/import', data, {
         headers: { 'Content-Type': 'multipart/form-data' }
     }),

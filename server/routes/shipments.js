@@ -550,4 +550,31 @@ router.delete('/:id', authenticateToken, authorizeRole(['Administrator', 'Cleara
     }
 });
 
+// Upload Document to existing shipment
+router.post('/:id/documents', authenticateToken, upload.single('file'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { document_type } = req.body;
+        const file = req.file;
+
+        if (!file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        await pool.query(
+            'INSERT INTO shipment_documents (shipment_id, file_name, file_path, file_type, file_size, document_type, uploaded_at) VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)',
+            [id, file.originalname, file.path, file.mimetype, file.size, document_type || 'Other']
+        );
+
+        await logActivity(req.user.id, 'UPLOAD_DOCUMENT', `Uploaded ${file.originalname} to shipment ${id}`, 'SHIPMENT', id);
+
+        const documentsResult = await pool.query('SELECT * FROM shipment_documents WHERE shipment_id = $1', [id]);
+        res.json(documentsResult.rows);
+
+    } catch (error) {
+        console.error('Upload document error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
 export default router;
