@@ -591,9 +591,16 @@ const ShipmentRegistry: React.FC = () => {
                             <div>
                                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Cargo Type</p>
                                 {isEditingInvoice ? (
-                                    <input name="description" value={editFormData.description || ''} onChange={handleEditChange} className="input-field py-1 border rounded px-2 w-full text-sm" placeholder="GENERAL" />
+                                    <select name="cargo_type" value={editFormData.cargo_type || 'GENERAL'} onChange={handleEditChange} className="input-field py-1 border rounded px-2 w-full text-sm bg-white">
+                                        <option value="GENERAL">GENERAL</option>
+                                        <option value="PERISHABLE">PERISHABLE</option>
+                                        <option value="DANGEROUS GOODS">DANGEROUS GOODS</option>
+                                        <option value="CONSOLIDATED">CONSOLIDATED</option>
+                                        <option value="VALUABLE">VALUABLE</option>
+                                        <option value="OTHER">OTHER</option>
+                                    </select>
                                 ) : (
-                                    <p className="font-semibold text-gray-900 uppercase">{selectedJob.description || 'GENERAL'}</p>
+                                    <p className="font-semibold text-gray-900 uppercase">{selectedJob.cargo_type || 'GENERAL'}</p>
                                 )}
                             </div>
                             <div>
