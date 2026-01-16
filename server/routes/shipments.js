@@ -268,7 +268,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
             return res.status(404).json({ error: 'Shipment not found' });
         }
 
-        const documentsResult = await pool.query('SELECT * FROM shipment_documents WHERE shipment_id = $1', [id]);
+        const documentsResult = await pool.query('SELECT * FROM shipment_documents WHERE shipment_id = $1 ORDER BY uploaded_at DESC', [id]);
         const invoiceResult = await pool.query('SELECT * FROM invoices WHERE shipment_id = $1', [id]);
 
         res.json({
@@ -562,13 +562,13 @@ router.post('/:id/documents', authenticateToken, upload.single('file'), async (r
         }
 
         await pool.query(
-            'INSERT INTO shipment_documents (shipment_id, file_name, file_path, file_type, file_size, document_type, uploaded_at) VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)',
-            [id, file.originalname, file.path, file.mimetype, file.size, document_type || 'Other']
+            'INSERT INTO shipment_documents (shipment_id, file_name, file_path, file_type, file_size, document_type, uploaded_at, uploaded_by, uploaded_by_name) VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, $7, $8)',
+            [id, file.originalname, file.path, file.mimetype, file.size, document_type || 'Other', req.user.id, req.user.username]
         );
 
         await logActivity(req.user.id, 'UPLOAD_DOCUMENT', `Uploaded ${file.originalname} to shipment ${id}`, 'SHIPMENT', id);
 
-        const documentsResult = await pool.query('SELECT * FROM shipment_documents WHERE shipment_id = $1', [id]);
+        const documentsResult = await pool.query('SELECT * FROM shipment_documents WHERE shipment_id = $1 ORDER BY uploaded_at DESC', [id]);
         res.json(documentsResult.rows);
 
     } catch (error) {

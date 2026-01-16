@@ -6,7 +6,7 @@ import {
     Search, Plus,
     FileText,
     MoreVertical, Pencil, Check,
-    Anchor, Plane, Truck, Package, X
+    Anchor, Plane, Truck, Package, X, Download
 
 } from 'lucide-react';
 import ScheduleClearanceDrawer from '../components/ScheduleClearanceDrawer';
@@ -506,25 +506,66 @@ const ShipmentRegistry: React.FC = () => {
                 Documents
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                {selectedJob.documents?.length > 0 ? (
-                    selectedJob.documents.map((doc: any) => (
-                        <div key={doc.id} className="flex items-center p-4 border rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                            <div className="mr-4 p-3 bg-white rounded-lg border border-gray-200">
-                                <FileText className="w-6 h-6 text-indigo-600" />
-                            </div>
-                            <div className="flex-1 overflow-hidden">
-                                <p className="font-medium text-gray-900 truncate" title={doc.file_name}>{doc.file_name}</p>
-                                <p className="text-xs text-gray-500 uppercase">{doc.document_type || 'Document'}</p>
-                            </div>
-                            <a href={`http://localhost:5001/${doc.file_path}`} target="_blank" rel="noreferrer" className="p-2 text-gray-400 hover:text-indigo-600">
-                                <Search className="w-4 h-4" />
-                            </a>
-                        </div>
-                    ))
-                ) : (
-                    <p className="col-span-2 text-center text-gray-500 py-8">No documents uploaded yet.</p>
-                )}
+            <div className="overflow-x-auto mb-8">
+                <table className="w-full text-sm text-left">
+                    <thead className="text-xs text-gray-500 uppercase bg-gray-50/50 border-b border-gray-100">
+                        <tr>
+                            <th className="py-3 px-4 font-bold">Type</th>
+                            <th className="py-3 px-4 font-bold">Name</th>
+                            <th className="py-3 px-4 font-bold">Uploaded By</th>
+                            <th className="py-3 px-4 font-bold">Date</th>
+                            <th className="py-3 px-4 font-bold text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                        {selectedJob.documents?.length > 0 ? (
+                            selectedJob.documents.map((doc: any) => (
+                                <tr key={doc.id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="py-3 px-4">
+                                        <span className="inline-block px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-xs font-bold uppercase">
+                                            {doc.document_type || 'Other'}
+                                        </span>
+                                    </td>
+                                    <td className="py-3 px-4 font-medium text-gray-900">
+                                        {doc.file_name}
+                                    </td>
+                                    <td className="py-3 px-4 text-gray-600">
+                                        {doc.uploaded_by_name || 'System'}
+                                    </td>
+                                    <td className="py-3 px-4 text-gray-500">
+                                        {new Date(doc.uploaded_at || doc.created_at || Date.now()).toLocaleDateString()}
+                                    </td>
+                                    <td className="py-3 px-4 text-right">
+                                        <div className="flex justify-end gap-2">
+                                            <a
+                                                href={`http://localhost:5001/${doc.file_path}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                                                title="View"
+                                            >
+                                                <Search className="w-4 h-4" />
+                                            </a>
+                                            {/* Download Link (typically same as view but with download attr if supported, or same action) */}
+                                            <a
+                                                href={`http://localhost:5001/${doc.file_path}`}
+                                                download
+                                                className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors"
+                                                title="Download"
+                                            >
+                                                <Download className="w-4 h-4" />
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan={5} className="py-8 text-center text-gray-500 italic">No documents uploaded yet.</td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
             </div>
 
             <div className="border-t pt-6">
