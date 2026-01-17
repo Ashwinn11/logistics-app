@@ -23,7 +23,6 @@ const Settings: React.FC = () => {
         { id: 'Delivery Agents', label: 'Delivery Agents', icon: Users },
         { id: 'Vendors', label: 'Vendors', icon: Briefcase },
         { id: 'Payment Items', label: 'Payment Items', icon: CreditCard },
-        { id: 'Integrations', label: 'Integrations', icon: Zap },
     ];
 
     const renderContent = () => {
