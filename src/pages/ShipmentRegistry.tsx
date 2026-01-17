@@ -299,10 +299,10 @@ const ShipmentRegistry: React.FC = () => {
         }
         if (type === 'schedule') {
             initialData.date = new Date().toISOString().split('T')[0];
-            initialData.type = 'Final';
-            initialData.port = 'Male';
+            initialData.type = 'Normal';
+            initialData.port = 'MALE';
             initialData.bl_awb = job.bl_awb_no || '';
-            initialData.transport_mode = job.transport_mode || 'SEA';
+            initialData.transport_mode = 'Sea';
         }
         setEditFormData(initialData);
         setEditingSection(null);
@@ -1480,23 +1480,42 @@ const ShipmentRegistry: React.FC = () => {
                                         <input type="date" name="date" value={editFormData.date || ''} onChange={handleEditChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Type</label>
-                                        <select name="type" value={editFormData.type || 'Final'} onChange={handleEditChange} className="w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
-                                            <option value="Final">Final</option>
-                                            <option value="Temporary">Temporary</option>
-                                            <option value="Transition">Transition</option>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Clearance Type</label>
+                                        <select name="type" value={editFormData.type || 'Normal'} onChange={handleEditChange} className="w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                                            <option value="Normal">NORMAL</option>
+                                            <option value="Express">EXPRESS</option>
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Port</label>
-                                        <input name="port" value={editFormData.port || ''} onChange={handleEditChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Clearance Port</label>
+                                        <select name="port" value={editFormData.port || ''} onChange={handleEditChange} className="w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                                            <option value="">Select Port</option>
+                                            <option value="MALE">MALE</option>
+                                            <option value="HULHUMALE">HULHUMALE</option>
+                                            <option value="MALE AIRPORT">MALE AIRPORT</option>
+                                            <option value="ADDU">ADDU</option>
+                                        </select>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Mode</label>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Select Clearing BL/AWB</label>
+                                        <select name="bl_awb" value={editFormData.bl_awb || ''} onChange={handleEditChange} className="w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                                            <option value="">Select BL/AWB</option>
+                                            {[popupJob?.bl_awb_no, popupJob?.house_bl].filter(opt => opt && opt !== '-').map((opt, idx) => (
+                                                <option key={idx} value={opt}>{opt}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Transport Mode</label>
                                         <select name="transport_mode" value={editFormData.transport_mode || 'SEA'} onChange={handleEditChange} className="w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
-                                            <option value="SEA">SEA</option>
-                                            <option value="AIR">AIR</option>
+                                            <option value="Sea">Sea</option>
+                                            <option value="Air">Air</option>
+                                            <option value="Road">Road</option>
                                         </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Packages</label>
+                                        <input type="text" name="packages" value={editFormData.packages || ''} onChange={handleEditChange} placeholder="e.g. 20 PKG" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
                                     </div>
                                     <div className="col-span-2">
                                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Remarks</label>
