@@ -270,13 +270,15 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
         const documentsResult = await pool.query('SELECT * FROM shipment_documents WHERE shipment_id = $1 ORDER BY uploaded_at DESC', [id]);
         const invoiceResult = await pool.query('SELECT * FROM invoices WHERE shipment_id = $1', [id]);
+        const clearanceResult = await pool.query('SELECT * FROM clearance_schedules WHERE job_id = $1', [id]);
 
         res.json({
             ...shipmentResult.rows[0],
             documents: documentsResult.rows,
             invoice: invoiceResult.rows[0] || null,
             payment_status: invoiceResult.rows[0]?.status || 'Pending',
-            invoice_id: invoiceResult.rows[0]?.id || null
+            invoice_id: invoiceResult.rows[0]?.id || null,
+            clearance_schedule: clearanceResult.rows[0] || null
         });
     } catch (error) {
         console.error('Get shipment error:', error);

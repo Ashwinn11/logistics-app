@@ -7,7 +7,7 @@ import {
     FileText,
     MoreVertical, Pencil, Check,
     Anchor, Plane, Truck, Package, X, Download, Trash2,
-    CreditCard, UploadCloud, FileSpreadsheet, Receipt
+    CreditCard, UploadCloud, FileSpreadsheet, Receipt, Calendar
 
 
 } from 'lucide-react';
@@ -29,7 +29,7 @@ const ShipmentRegistry: React.FC = () => {
     const [previewDoc, setPreviewDoc] = useState<any | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [popupJob, setPopupJob] = useState<any | null>(null);
-    const [popupType, setPopupType] = useState<'invoice' | 'bl' | 'payment' | 'upload' | null>(null);
+    const [popupType, setPopupType] = useState<'invoice' | 'bl' | 'payment' | 'upload' | 'schedule' | null>(null);
 
 
     // Dropdown Data State
@@ -296,6 +296,13 @@ const ShipmentRegistry: React.FC = () => {
         const initialData = { ...job };
         if (type === 'bl') {
             initialData.packages = initializePackages(job);
+        }
+        if (type === 'schedule') {
+            initialData.date = new Date().toISOString().split('T')[0];
+            initialData.type = 'Final';
+            initialData.port = 'Male';
+            initialData.bl_awb = job.bl_awb_no || '';
+            initialData.transport_mode = job.transport_mode || 'SEA';
         }
         setEditFormData(initialData);
         setEditingSection(null);
@@ -876,9 +883,18 @@ const ShipmentRegistry: React.FC = () => {
                                 <p className="font-medium text-gray-900">{selectedJob.service || (['Form Filling', 'Clearance', 'Form Filling & Clearance', 'DR'].includes(selectedJob.description) ? selectedJob.description : 'Clearance')}</p>
                             </div>
                         </div>
-                        <button className="px-4 py-2 bg-black text-white text-sm font-bold rounded flex items-center gap-2 hover:bg-gray-800 transition-colors shadow-lg">
-                            Send to Accounts
-                        </button>
+                        {selectedJob.clearance_schedule ? (
+                            <button className="px-4 py-2 bg-black text-white text-sm font-bold rounded flex items-center gap-2 hover:bg-gray-800 transition-colors shadow-lg">
+                                Send to Accounts
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => handleOpenPopup('schedule', selectedJob)}
+                                className="px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded flex items-center gap-2 hover:bg-indigo-700 transition-colors shadow-lg"
+                            >
+                                <Calendar className="w-4 h-4" /> Schedule Clearance
+                            </button>
+                        )}
                     </div>
 
                     {/* Progress Bar (Mockup) */}
@@ -1233,13 +1249,30 @@ const ShipmentRegistry: React.FC = () => {
         if (!popupJob) return;
         try {
             setLoading(true);
-            const response = await shipmentsAPI.update(popupJob.id, editFormData);
-            const updated = response.data;
-            setJobs(prev => prev.map(j => j.id === updated.id ? updated : j));
-            if (selectedJob?.id === updated.id) {
-                setSelectedJob(updated);
+
+            if (popupType === 'schedule') {
+                await clearanceAPI.create({
+                    job_id: popupJob.id,
+                    ...editFormData
+                });
+                // Relaxed refresh logic
+                const res = await shipmentsAPI.getById(popupJob.id);
+                const updated = res.data;
+                setJobs(prev => prev.map(j => j.id === updated.id ? updated : j));
+                if (selectedJob?.id === updated.id) {
+                    setSelectedJob(updated);
+                }
+                alert("Clearance Scheduled Successfully");
+            } else {
+                const response = await shipmentsAPI.update(popupJob.id, editFormData);
+                const updated = response.data;
+                setJobs(prev => prev.map(j => j.id === updated.id ? updated : j));
+                if (selectedJob?.id === updated.id) {
+                    setSelectedJob(updated);
+                }
+                alert("Details updated successfully");
             }
-            alert("Details updated successfully");
+
             setPopupType(null);
             setPopupJob(null);
         } catch (error) {
@@ -1433,6 +1466,41 @@ const ShipmentRegistry: React.FC = () => {
                                     <div>
                                         <label className="block text-sm font-semibold text-gray-700 mb-2">File</label>
                                         <input type="file" id="docFileInputPopup" className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {popupType === 'schedule' && (
+                            <div className="space-y-4 px-2">
+                                <h3 className="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Schedule Clearance</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Clearance Date</label>
+                                        <input type="date" name="date" value={editFormData.date || ''} onChange={handleEditChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Type</label>
+                                        <select name="type" value={editFormData.type || 'Final'} onChange={handleEditChange} className="w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                                            <option value="Final">Final</option>
+                                            <option value="Temporary">Temporary</option>
+                                            <option value="Transition">Transition</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Port</label>
+                                        <input name="port" value={editFormData.port || ''} onChange={handleEditChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Mode</label>
+                                        <select name="transport_mode" value={editFormData.transport_mode || 'SEA'} onChange={handleEditChange} className="w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                                            <option value="SEA">SEA</option>
+                                            <option value="AIR">AIR</option>
+                                        </select>
+                                    </div>
+                                    <div className="col-span-2">
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Remarks</label>
+                                        <textarea name="remarks" value={editFormData.remarks || ''} onChange={(e: any) => handleEditChange(e)} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm" rows={3}></textarea>
                                     </div>
                                 </div>
                             </div>
