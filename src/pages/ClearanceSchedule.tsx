@@ -201,7 +201,7 @@ const ClearanceSchedule: React.FC = () => {
                                                 {item.container_no ? (
                                                     <>
                                                         <div className="font-medium text-gray-900">{item.container_no}</div>
-                                                        <div className="text-xs text-gray-500">{item.container_type || '20FT'}</div>
+                                                        <div className="text-xs text-gray-500">{item.container_type}</div>
                                                     </>
                                                 ) : '-'}
                                             </td>
