@@ -926,9 +926,11 @@ const ShipmentRegistry: React.FC = () => {
                                         <select name="cargo_type" value={editFormData.cargo_type || 'GENERAL'} onChange={handleEditChange} className="input-field py-1 border rounded px-2 w-full text-sm bg-white">
                                             <option value="GENERAL">GENERAL</option>
                                             <option value="PERISHABLE">PERISHABLE</option>
-                                            <option value="DANGEROUS GOODS">DANGEROUS GOODS</option>
-                                            <option value="CONSOLIDATED">CONSOLIDATED</option>
-                                            <option value="VALUABLE">VALUABLE</option>
+                                            <option value="HARDWARE">HARDWARE</option>
+                                            <option value="GARMENTS">GARMENTS</option>
+                                            <option value="ELECTRONICS">ELECTRONICS</option>
+                                            <option value="DRY FOODS">DRY FOODS</option>
+                                            <option value="FURNITURE">FURNITURE</option>
                                             <option value="OTHER">OTHER</option>
                                         </select>
                                     ) : (
@@ -956,10 +958,15 @@ const ShipmentRegistry: React.FC = () => {
                                     {isEditingInvoice ? (
                                         <select name="office" value={editFormData.office || ''} onChange={handleEditChange} className="input-field py-1 border rounded px-2 w-full text-sm bg-white">
                                             <option value="">Select Office</option>
-                                            <option value="MPL">MPL</option>
-                                            <option value="MACL">MACL</option>
-                                            <option value="MCS">MCS</option>
-                                            <option value="Head Office">Head Office</option>
+                                            <option value="00MP">00MP</option>
+                                            <option value="00AP">00AP</option>
+                                            <option value="00HA">00HA</option>
+                                            <option value="00BW">00BW</option>
+                                            <option value="00HK">00HK</option>
+                                            <option value="00HM">00HM</option>
+                                            <option value="00PO">00PO</option>
+                                            <option value="00SG">00SG</option>
+                                            <option value="00SH">00SH</option>
                                         </select>
                                     ) : (
                                         <p className="font-semibold text-gray-900">{selectedJob.office || '-'}</p>
