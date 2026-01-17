@@ -22,7 +22,7 @@ const ShipmentRegistry: React.FC = () => {
     const [viewMode, setViewMode] = useState<'empty' | 'details' | 'create'>('empty');
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [isScheduleDrawerOpen, setIsScheduleDrawerOpen] = useState(false);
+
     const [activeTab, setActiveTab] = useState('Details');
     const [editingSection, setEditingSection] = useState<string | null>(null);
     const [editFormData, setEditFormData] = useState<any>({});
@@ -1284,7 +1284,7 @@ const ShipmentRegistry: React.FC = () => {
     };
 
     const renderPopup = () => {
-        if (!popupJob || !popupType) return null;
+        if (!popupJob || !popupType || popupType === 'schedule') return null;
 
         return (
             <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => { setPopupType(null); setPopupJob(null); }}>
@@ -1471,59 +1471,7 @@ const ShipmentRegistry: React.FC = () => {
                             </div>
                         )}
 
-                        {popupType === 'schedule' && (
-                            <div className="space-y-4 px-2">
-                                <h3 className="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Schedule Clearance</h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Clearance Date</label>
-                                        <input type="date" name="date" value={editFormData.date || ''} onChange={handleEditChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Clearance Type</label>
-                                        <select name="type" value={editFormData.type || 'Normal'} onChange={handleEditChange} className="w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
-                                            <option value="Normal">NORMAL</option>
-                                            <option value="Express">EXPRESS</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Clearance Port</label>
-                                        <select name="port" value={editFormData.port || ''} onChange={handleEditChange} className="w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
-                                            <option value="">Select Port</option>
-                                            <option value="MALE">MALE</option>
-                                            <option value="HULHUMALE">HULHUMALE</option>
-                                            <option value="MALE AIRPORT">MALE AIRPORT</option>
-                                            <option value="ADDU">ADDU</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Select Clearing BL/AWB</label>
-                                        <select name="bl_awb" value={editFormData.bl_awb || ''} onChange={handleEditChange} className="w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
-                                            <option value="">Select BL/AWB</option>
-                                            {[popupJob?.bl_awb_no, popupJob?.house_bl].filter(opt => opt && opt !== '-').map((opt, idx) => (
-                                                <option key={idx} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Transport Mode</label>
-                                        <select name="transport_mode" value={editFormData.transport_mode || 'SEA'} onChange={handleEditChange} className="w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
-                                            <option value="Sea">Sea</option>
-                                            <option value="Air">Air</option>
-                                            <option value="Road">Road</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Packages</label>
-                                        <input type="text" name="packages" value={editFormData.packages || ''} onChange={handleEditChange} placeholder="e.g. 20 PKG" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
-                                    </div>
-                                    <div className="col-span-2">
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Remarks</label>
-                                        <textarea name="remarks" value={editFormData.remarks || ''} onChange={(e: any) => handleEditChange(e)} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm" rows={3}></textarea>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+
                     </div>
 
                     <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50">
@@ -1665,12 +1613,17 @@ const ShipmentRegistry: React.FC = () => {
                 </div>
             )}
 
-            <ScheduleClearanceDrawer
-                isOpen={isScheduleDrawerOpen}
-                onClose={() => setIsScheduleDrawerOpen(false)}
-                onSave={handleScheduleSave}
-                job={selectedJob}
-            />
+
+            {popupType === 'schedule' && popupJob && (
+                <ScheduleClearanceDrawer
+                    isOpen={true}
+                    onClose={() => { setPopupType(null); setPopupJob(null); }}
+                    onSave={handleScheduleSave}
+                    job={popupJob}
+                    initialData={editFormData}
+                />
+            )}
+
             {renderPopup()}
         </Layout>
     );
