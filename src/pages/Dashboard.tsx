@@ -19,6 +19,7 @@ const Dashboard: React.FC = () => {
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState<any>(null);
+    const [originalData, setOriginalData] = useState<any>(null);
     const [viewingAll, setViewingAll] = useState(false);
 
     useEffect(() => {
@@ -26,6 +27,7 @@ const Dashboard: React.FC = () => {
             try {
                 const response = await analyticsAPI.getDashboard();
                 setData(response.data);
+                setOriginalData(response.data);
             } catch (error) {
                 console.error('Error fetching dashboard data:', error);
             } finally {
@@ -36,7 +38,15 @@ const Dashboard: React.FC = () => {
         fetchData();
     }, []);
 
-    const handleViewAll = async () => {
+    const handleViewToggle = async () => {
+        if (viewingAll) {
+            // View Less: Restore original data
+            setData(originalData);
+            setViewingAll(false);
+            return;
+        }
+
+        // View All logic
         try {
             setLoading(true);
             const response = await shipmentsAPI.getAll();
@@ -235,11 +245,10 @@ const Dashboard: React.FC = () => {
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-lg font-bold text-gray-900">Recent Shipments</h3>
                         <button
-                            onClick={handleViewAll}
-                            disabled={viewingAll}
-                            className={`text-sm ${viewingAll ? 'text-gray-400 cursor-default' : 'btn-secondary'}`}
+                            onClick={handleViewToggle}
+                            className="btn-secondary text-sm"
                         >
-                            {viewingAll ? 'Showing Last 3 Days' : 'View All'}
+                            {viewingAll ? 'View Less' : 'View All'}
                         </button>
                     </div>
                     <div className="overflow-x-auto">
