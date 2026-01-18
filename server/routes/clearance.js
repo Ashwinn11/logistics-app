@@ -81,6 +81,7 @@ router.put('/:id', async (req, res) => {
 // Get all clearance schedules (with filters)
 router.get('/', async (req, res) => {
     try {
+        console.log('Fetching clearances with query:', req.query);
         const { search, type, transport_mode, date } = req.query;
 
         // Note: We might need master_bl/house_bl from shipments if present in schema.
@@ -146,6 +147,8 @@ router.get('/', async (req, res) => {
         }
 
         query += ' ORDER BY cs.clearance_date ASC';
+
+        console.log('Query:', query, 'Params:', params);
 
         const result = await pool.query(query, params);
         res.json(result.rows);
