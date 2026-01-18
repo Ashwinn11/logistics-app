@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Layout from '../components/Layout';
 import {
     Search, Eye, Printer, ChevronDown,
     X, Download, Upload
 } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 import { deliveryNotesAPI } from '../services/api';
 
@@ -70,6 +72,7 @@ const DeliveryNotes: React.FC = () => {
     // State for split view and tabs
     const [selectedNote, setSelectedNote] = useState<DeliveryNote | null>(null);
     const [activeTab, setActiveTab] = useState<'document' | 'manage'>('manage');
+    const printRef = useRef<HTMLDivElement>(null);
 
     // Fetch Data
     useEffect(() => {
@@ -99,11 +102,11 @@ const DeliveryNotes: React.FC = () => {
         return matchesSearch && matchesStatus;
     });
 
-    const handleViewDetails = async (note: DeliveryNote) => {
+    const handleViewDetails = async (note: DeliveryNote, tab: 'document' | 'manage' = 'manage') => {
         try {
             const response = await deliveryNotesAPI.getById(note.id);
             setSelectedNote(response.data);
-            setActiveTab('manage');
+            setActiveTab(tab);
         } catch (err) {
             console.error(err);
         }
@@ -113,9 +116,50 @@ const DeliveryNotes: React.FC = () => {
         setSelectedNote(null);
     };
 
+    const handlePrint = () => {
+        window.print();
+    };
+
+    const handleDownloadPDF = async () => {
+        if (!printRef.current) return;
+
+        try {
+            const element = printRef.current;
+            if (!element) return;
+
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                windowWidth: element.scrollWidth,
+                windowHeight: element.scrollHeight
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            const imgWidth = 210; // A4 Width in mm
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+            pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+            pdf.save(`DeliveryNote_${selectedNote?.id || 'doc'}.pdf`);
+        } catch (error) {
+            console.error('PDF Generation Failed', error);
+            alert('Failed to generate PDF. Please try printing to PDF instead.');
+        }
+    };
+
     // Render the Document Preview (Image 1 style)
     const renderDocument = () => (
-        <div className="bg-white shadow-sm border border-gray-200 min-h-[1100px] text-sm font-mono relative flex flex-col">
+        <div
+            ref={printRef}
+            id="printable-content"
+            className="bg-white shadow-sm border border-gray-200 min-h-[1100px] text-sm font-mono relative flex flex-col"
+        >
             {/* Header Image */}
             <div className="w-full relative">
                 <img src={seaflowHeader} alt="Header" className="w-full h-auto object-cover max-h-48" />
@@ -512,7 +556,7 @@ const DeliveryNotes: React.FC = () => {
                                                     <button className="p-1 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors" onClick={(e) => { e.stopPropagation(); setSelectedNote(note); setActiveTab('document'); }}>
                                                         <Printer className="w-4 h-4" />
                                                     </button>
-                                                    <button className="p-1 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors" onClick={(e) => { e.stopPropagation(); handleViewDetails(note); }}>
+                                                    <button className="p-1 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors" onClick={(e) => { e.stopPropagation(); handleViewDetails(note, 'document'); }}>
                                                         <Eye className="w-4 h-4" />
                                                     </button>
                                                 </div>
@@ -562,10 +606,18 @@ const DeliveryNotes: React.FC = () => {
 
                             {activeTab === 'document' && (
                                 <div className="ml-auto flex gap-2">
-                                    <button className="p-2 text-gray-500 hover:text-gray-900 hover:bg-white rounded border border-transparent hover:border-gray-200 transition-all" title="Print">
+                                    <button
+                                        className="p-2 text-gray-500 hover:text-gray-900 hover:bg-white rounded border border-transparent hover:border-gray-200 transition-all"
+                                        title="Print"
+                                        onClick={handlePrint}
+                                    >
                                         <Printer className="w-4 h-4" />
                                     </button>
-                                    <button className="p-2 text-gray-500 hover:text-gray-900 hover:bg-white rounded border border-transparent hover:border-gray-200 transition-all" title="Download PDF">
+                                    <button
+                                        className="p-2 text-gray-500 hover:text-gray-900 hover:bg-white rounded border border-transparent hover:border-gray-200 transition-all"
+                                        title="Download PDF"
+                                        onClick={handleDownloadPDF}
+                                    >
                                         <Download className="w-4 h-4" />
                                     </button>
                                 </div>
@@ -581,6 +633,31 @@ const DeliveryNotes: React.FC = () => {
             </div>
 
             <style>{`
+            /* Print Styles */
+            @media print {
+                body * {
+                    visibility: hidden;
+                }
+                #printable-content, #printable-content * {
+                    visibility: visible;
+                }
+                #printable-content {
+                    position: fixed;
+                    left: 0;
+                    top: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: white;
+                    padding: 0;
+                    margin: 0;
+                    z-index: 9999;
+                }
+                /* Hide buttons/UI during print */
+                button, .no-print {
+                    display: none !important;
+                }
+            }
+
             .custom-scrollbar::-webkit-scrollbar {
                 width: 6px;
             }
@@ -602,7 +679,7 @@ const DeliveryNotes: React.FC = () => {
                 animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             }
         `}</style>
-        </Layout>
+        </Layout >
     );
 };
 
