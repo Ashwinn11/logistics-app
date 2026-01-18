@@ -635,21 +635,34 @@ const DeliveryNotes: React.FC = () => {
             <style>{`
             /* Print Styles */
             @media print {
+                @page {
+                    size: auto;
+                    margin: 0mm;
+                }
+                body {
+                    margin: 0;
+                    padding: 0;
+                }
+                /* Hide everything by default */
                 body * {
                     visibility: hidden;
                 }
+                /* Make printable content visible */
                 #printable-content, #printable-content * {
                     visibility: visible;
                 }
+                /* Position the content to fill the page */
                 #printable-content {
-                    position: fixed;
+                    position: absolute;
                     left: 0;
                     top: 0;
                     width: 100%;
-                    height: 100%;
-                    background: white;
-                    padding: 0;
                     margin: 0;
+                    padding: 20px; /* Add some internal padding safely */
+                    background: white;
+                    border: none !important;
+                    box-shadow: none !important;
+                    min-height: auto !important;
                     z-index: 9999;
                 }
                 /* Hide buttons/UI during print */
