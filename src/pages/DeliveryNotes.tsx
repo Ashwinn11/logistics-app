@@ -171,11 +171,17 @@ const DeliveryNotes: React.FC = () => {
                 }}
             >
                 {/* Header Image */}
-                <div className="w-full">
-                    <img src={seaflowHeader} alt="Header" className="w-full h-auto" crossOrigin="anonymous" />
+                <div className="w-full flex-shrink-0 font-none leading-none">
+                    <img
+                        src={seaflowHeader}
+                        alt="Header"
+                        className="w-full h-auto block"
+                        style={{ width: '100%', height: 'auto', display: 'block' }}
+                        crossOrigin="anonymous"
+                    />
                 </div>
 
-                <div className="p-8 flex-1">
+                <div className="px-12 py-8 flex-1">
                     <div className="flex justify-between items-start mb-8 mt-2">
                         <div className="w-1/2 flex items-center gap-4">
                             {/* Logo and Address */}
@@ -317,8 +323,14 @@ const DeliveryNotes: React.FC = () => {
                 </div>
 
                 {/* Footer Image */}
-                <div className="w-full">
-                    <img src={seaflowFooter} alt="Footer" className="w-full h-auto" crossOrigin="anonymous" />
+                <div className="w-full mt-auto flex-shrink-0 font-none leading-none">
+                    <img
+                        src={seaflowFooter}
+                        alt="Footer"
+                        className="w-full h-auto block"
+                        style={{ width: '100%', height: 'auto', display: 'block' }}
+                        crossOrigin="anonymous"
+                    />
                 </div>
             </div>
         </div>
