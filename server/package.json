@@ -5,7 +5,7 @@
     "main": "index.js",
     "type": "module",
     "scripts": {
-        "start": "node index.js",
+        "start": "node migrations/run.js && node index.js",
         "dev": "node --watch index.js",
         "migrate": "node migrations/run.js",
         "seed": "node seeds/run.js"

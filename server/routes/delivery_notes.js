@@ -160,9 +160,9 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
         // Fetch Vehicles
         const vehiclesResult = await pool.query(`
-            SELECT dnv.*, f.registration_number, f.type as vehicle_type
+            SELECT dnv.*, v.id as registration_number, v.type as vehicle_type
             FROM delivery_note_vehicles dnv
-            LEFT JOIN fleet f ON dnv.vehicle_id = f.id
+            LEFT JOIN vehicles v ON dnv.vehicle_id = v.id
             WHERE dnv.delivery_note_id = $1
         `, [id]);
 
