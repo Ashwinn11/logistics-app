@@ -1187,102 +1187,114 @@ const ShipmentRegistry: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Containers Card */}
-                        <div className="bg-white rounded-xl shadow-sm p-8 mb-6 border border-gray-100 transition-all">
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="font-bold text-gray-900 flex items-center gap-3 text-lg">
-                                    <Package className="w-5 h-5 text-gray-400" />
-                                    Containers
-                                </h3>
-                                {!isEditingContainers && (
-                                    <button
-                                        onClick={() => handleEditClick('containers')}
-                                        className="text-gray-400 hover:text-indigo-600 p-2 hover:bg-indigo-50 rounded-full transition-colors"
-                                        title={selectedJob.container_no ? "Edit Container" : "Add Container"}
-                                    >
-                                        <Pencil className="w-4 h-4" />
-                                    </button>
-                                )}
-                            </div>
-                            <table className="w-full text-sm text-left">
-                                <thead className="text-xs text-gray-500 uppercase bg-gray-50/50 border-b border-gray-100">
-                                    <tr>
-                                        <th className="py-3 px-4 font-bold">Number</th>
-                                        <th className="py-3 px-4 font-bold">Size</th>
-                                        <th className="py-3 px-4 font-bold">Unloaded Date</th>
-                                        <th className="py-3 px-4 font-bold text-center">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {selectedJob.container_no || isEditingContainers ? (
-                                        <tr className="border-b border-gray-50 hover:bg-gray-50">
-                                            <td className="py-4 px-4 font-medium text-gray-900">
-                                                {isEditingContainers ? (
-                                                    <input name="container_no" value={editFormData.container_no || ''} onChange={handleEditChange} className="input-field py-1 border rounded px-2 w-full text-sm" placeholder="Container No" />
-                                                ) : selectedJob.container_no}
-                                            </td>
-                                            <td className="py-4 px-4">
-                                                {isEditingContainers ? (
-                                                    <select name="container_type" value={editFormData.container_type || 'FCL 20'} onChange={handleEditChange} className="input-field py-1 border rounded px-2 w-full text-sm bg-white">
-                                                        <option value="FCL 20">FCL 20</option>
-                                                        <option value="FCL 40">FCL 40</option>
-                                                        <option value="LCL">LCL</option>
-                                                        <option value="AIR">AIR</option>
-                                                    </select>
-                                                ) : (selectedJob.container_type || 'FCL 20')}
-                                            </td>
-                                            <td className="py-4 px-4">
-                                                {isEditingContainers ? (
-                                                    <input type="date" name="unloaded_date" value={editFormData.unloaded_date ? new Date(editFormData.unloaded_date).toISOString().substr(0, 10) : ''} onChange={handleEditChange} className="input-field py-1 border rounded px-2 w-full text-sm" />
-                                                ) : (selectedJob.unloaded_date ? new Date(selectedJob.unloaded_date).toLocaleDateString() : '-')}
-                                            </td>
-                                            <td className="py-4 px-4 text-center">
-                                                {isEditingContainers ? (
-                                                    <div className="flex items-center justify-center gap-3">
-                                                        <button onClick={handleSaveDetails} className="bg-green-50 text-green-600 p-1.5 rounded hover:bg-green-100 transition-colors" title="Save">
-                                                            <Check className="w-4 h-4" />
-                                                        </button>
-                                                        <button onClick={handleCancelEdit} className="bg-red-50 text-red-600 p-1.5 rounded hover:bg-red-100 transition-colors" title="Cancel">
-                                                            <X className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex items-center justify-center gap-4">
-                                                        <button onClick={() => handleEditClick('containers')} className="text-indigo-600 hover:bg-indigo-50 p-2 rounded-full transition-all" title="Edit">
-                                                            <Pencil className="w-5 h-5" />
-                                                        </button>
-                                                        <button
-                                                            onClick={async () => {
-                                                                if (window.confirm('Are you sure you want to remove this container?')) {
-                                                                    try {
-                                                                        const updatedData = { ...selectedJob, container_no: null, container_type: null, unloaded_date: null };
-                                                                        await shipmentsAPI.update(selectedJob.id, updatedData);
-                                                                        // Refresh locally
-                                                                        setSelectedJob(updatedData);
-                                                                        setJobs(prev => prev.map(j => j.id === updatedData.id ? updatedData : j));
-                                                                    } catch (e) {
-                                                                        console.error("Failed to delete container", e);
-                                                                        alert("Failed to delete container");
-                                                                    }
-                                                                }
-                                                            }}
-                                                            className="text-indigo-600 hover:bg-red-50 hover:text-red-600 p-2 rounded-full transition-all"
-                                                            title="Delete"
-                                                        >
-                                                            <Trash2 className="w-5 h-5" />
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        <tr>
-                                            <td colSpan={4} className="py-8 text-center text-gray-400 italic">No containers listed</td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+                        {selectedJob.transport_mode === 'SEA' && (
+                            <>
+                                {/* Containers Card */}
+                                <div className="bg-white rounded-xl shadow-sm p-8 mb-6 border border-gray-100 transition-all">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h3 className="font-bold text-gray-900 flex items-center gap-3 text-lg">
+                                            <Package className="w-5 h-5 text-gray-400" />
+                                            Containers
+                                        </h3>
+                                        {!isEditingContainers && (
+                                            <button
+                                                onClick={() => handleEditClick('containers')}
+                                                className="text-gray-400 hover:text-indigo-600 p-2 hover:bg-indigo-50 rounded-full transition-colors"
+                                                title={selectedJob.container_no ? "Edit Container" : "Add Container"}
+                                            >
+                                                <Pencil className="w-4 h-4" />
+                                            </button>
+                                        )}
+                                    </div>
+                                    <table className="w-full text-sm text-left">
+                                        <thead className="text-xs text-gray-500 uppercase bg-gray-50/50 border-b border-gray-100">
+                                            <tr>
+                                                <th className="py-3 px-4 font-bold">Number</th>
+                                                <th className="py-3 px-4 font-bold">Size</th>
+                                                <th className="py-3 px-4 font-bold">Unloaded Date</th>
+                                                <th className="py-3 px-4 font-bold text-center">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {selectedJob.container_no || isEditingContainers ? (
+                                                <tr className="border-b border-gray-50 hover:bg-gray-50">
+                                                    <td className="py-4 px-4 font-medium text-gray-900">
+                                                        {isEditingContainers ? (
+                                                            <input name="container_no" value={editFormData.container_no || ''} onChange={handleEditChange} className="input-field py-1 border rounded px-2 w-full text-sm" placeholder="Container No" />
+                                                        ) : selectedJob.container_no}
+                                                    </td>
+                                                    <td className="py-4 px-4">
+                                                        {isEditingContainers ? (
+                                                            <select name="container_type" value={editFormData.container_type || 'FCL 20'} onChange={handleEditChange} className="input-field py-1 border rounded px-2 w-full text-sm bg-white">
+                                                                <option value="FCL 20">FCL 20</option>
+                                                                <option value="FCL 40">FCL 40</option>
+                                                                <option value="LCL 20">LCL 20</option>
+                                                                <option value="LCL 40">LCL 40</option>
+                                                                <option value="OT 20">OT 20</option>
+                                                                <option value="OT 40">OT 40</option>
+                                                                <option value="FR 20">FR 20</option>
+                                                                <option value="FR 40">FR 40</option>
+                                                                <option value="D/R">D/R</option>
+                                                                <option value="Reefer">Reefer 20ft</option>
+                                                                <option value="Reefer">Reefer 40ft</option>
+                                                                <option value="Loose cargo">Loose cargo</option>
+                                                            </select>
+                                                        ) : (selectedJob.container_type || 'FCL 20')}
+                                                    </td>
+                                                    <td className="py-4 px-4">
+                                                        {isEditingContainers ? (
+                                                            <input type="date" name="unloaded_date" value={editFormData.unloaded_date ? new Date(editFormData.unloaded_date).toISOString().substr(0, 10) : ''} onChange={handleEditChange} className="input-field py-1 border rounded px-2 w-full text-sm" />
+                                                        ) : (selectedJob.unloaded_date ? new Date(selectedJob.unloaded_date).toLocaleDateString() : '-')}
+                                                    </td>
+                                                    <td className="py-4 px-4 text-center">
+                                                        {isEditingContainers ? (
+                                                            <div className="flex items-center justify-center gap-3">
+                                                                <button onClick={handleSaveDetails} className="bg-green-50 text-green-600 p-1.5 rounded hover:bg-green-100 transition-colors" title="Save">
+                                                                    <Check className="w-4 h-4" />
+                                                                </button>
+                                                                <button onClick={handleCancelEdit} className="bg-red-50 text-red-600 p-1.5 rounded hover:bg-red-100 transition-colors" title="Cancel">
+                                                                    <X className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex items-center justify-center gap-4">
+                                                                <button onClick={() => handleEditClick('containers')} className="text-indigo-600 hover:bg-indigo-50 p-2 rounded-full transition-all" title="Edit">
+                                                                    <Pencil className="w-5 h-5" />
+                                                                </button>
+                                                                <button
+                                                                    onClick={async () => {
+                                                                        if (window.confirm('Are you sure you want to remove this container?')) {
+                                                                            try {
+                                                                                const updatedData = { ...selectedJob, container_no: null, container_type: null, unloaded_date: null };
+                                                                                await shipmentsAPI.update(selectedJob.id, updatedData);
+                                                                                // Refresh locally
+                                                                                setSelectedJob(updatedData);
+                                                                                setJobs(prev => prev.map(j => j.id === updatedData.id ? updatedData : j));
+                                                                            } catch (e) {
+                                                                                console.error("Failed to delete container", e);
+                                                                                alert("Failed to delete container");
+                                                                            }
+                                                                        }
+                                                                    }}
+                                                                    className="text-indigo-600 hover:bg-red-50 hover:text-red-600 p-2 rounded-full transition-all"
+                                                                    title="Delete"
+                                                                >
+                                                                    <Trash2 className="w-5 h-5" />
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan={4} className="py-8 text-center text-gray-400 italic">No containers listed</td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </>
+                        )}
                     </>)}
 
                     {activeTab === 'Documents' && renderDocumentsTab()}
