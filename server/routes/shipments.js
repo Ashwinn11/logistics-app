@@ -46,19 +46,28 @@ const generateShipmentId = async (transportMode) => {
     const date = new Date();
     const year = date.getFullYear();
     const prefixChar = (transportMode === 'SEA') ? 'S' : 'A';
-    // Matches S2026-... or A2026-... (_ wildcard for single char)
-    const pattern = `_${year}-%`;
+    // Matches specific prefixes S2026-... and A2026-...
+    const sPattern = `S${year}-%`;
+    const aPattern = `A${year}-%`;
 
-    // Get max sequence number for this year regardless of prefix
+    // Get all IDs for this year to calculate max sequence safely in JS
     const result = await pool.query(
-        "SELECT MAX(CAST(SUBSTRING(id FROM '-([0-9]+)$') AS INTEGER)) as max_seq FROM shipments WHERE id LIKE $1",
-        [pattern]
+        "SELECT id FROM shipments WHERE id LIKE $1 OR id LIKE $2",
+        [sPattern, aPattern]
     );
 
-    let nextNum = 1;
-    if (result.rows.length > 0 && result.rows[0].max_seq) {
-        nextNum = result.rows[0].max_seq + 1;
-    }
+    let maxNum = 0;
+    result.rows.forEach(row => {
+        const parts = row.id.split('-');
+        if (parts.length === 2) {
+            const num = parseInt(parts[1], 10);
+            if (!isNaN(num) && num > maxNum) {
+                maxNum = num;
+            }
+        }
+    });
+
+    const nextNum = maxNum + 1;
 
     return `${prefixChar}${year}-${String(nextNum).padStart(3, '0')}`;
 };
@@ -91,16 +100,26 @@ router.post('/import', authenticateToken, upload.single('file'), async (req, res
         // Pre-calculate IDs to avoid N+1 Selects
         const date = new Date();
         const year = date.getFullYear();
-        // Matches S2026-... or A2026-... (_ wildcard for single char)
-        const pattern = `_${year}-%`;
+        const sPattern = `S${year}-%`;
+        const aPattern = `A${year}-%`;
+
         const lastIdResult = await pool.query(
-            "SELECT MAX(CAST(SUBSTRING(id FROM '-([0-9]+)$') AS INTEGER)) as max_seq FROM shipments WHERE id LIKE $1",
-            [pattern]
+            "SELECT id FROM shipments WHERE id LIKE $1 OR id LIKE $2",
+            [sPattern, aPattern]
         );
-        let nextIdNum = 1;
-        if (lastIdResult.rows.length > 0 && lastIdResult.rows[0].max_seq) {
-            nextIdNum = lastIdResult.rows[0].max_seq + 1;
-        }
+
+        let maxNum = 0;
+        lastIdResult.rows.forEach(row => {
+            const parts = row.id.split('-');
+            if (parts.length === 2) {
+                const num = parseInt(parts[1], 10);
+                if (!isNaN(num) && num > maxNum) {
+                    maxNum = num;
+                }
+            }
+        });
+
+        let nextIdNum = maxNum + 1;
 
         await pool.query('BEGIN');
 
