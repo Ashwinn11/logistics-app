@@ -42,27 +42,25 @@ const upload = multer({
 });
 
 // Helper to generate Shipment ID
-const generateShipmentId = async () => {
+const generateShipmentId = async (transportMode) => {
     const date = new Date();
     const year = date.getFullYear();
-    const prefix = `SH-${year}`;
+    const prefixChar = (transportMode === 'SEA') ? 'S' : 'A';
+    // Matches S2026-... or A2026-... (_ wildcard for single char)
+    const pattern = `_${year}-%`;
 
-    // Get last shipment ID for this year
+    // Get max sequence number for this year regardless of prefix
     const result = await pool.query(
-        "SELECT id FROM shipments WHERE id LIKE $1 ORDER BY created_at DESC LIMIT 1",
-        [`${prefix}-%`]
+        "SELECT MAX(CAST(SUBSTRING(id FROM '-([0-9]+)$') AS INTEGER)) as max_seq FROM shipments WHERE id LIKE $1",
+        [pattern]
     );
 
     let nextNum = 1;
-    if (result.rows.length > 0) {
-        const lastId = result.rows[0].id;
-        const parts = lastId.split('-');
-        if (parts.length === 3) {
-            nextNum = parseInt(parts[2]) + 1;
-        }
+    if (result.rows.length > 0 && result.rows[0].max_seq) {
+        nextNum = result.rows[0].max_seq + 1;
     }
 
-    return `${prefix}-${String(nextNum).padStart(3, '0')}`;
+    return `${prefixChar}${year}-${String(nextNum).padStart(3, '0')}`;
 };
 
 // Import Shipments from Excel/CSV
@@ -90,14 +88,18 @@ router.post('/import', authenticateToken, upload.single('file'), async (req, res
         let errors = [];
 
         // Pre-calculate IDs to avoid N+1 Selects
+        // Pre-calculate IDs to avoid N+1 Selects
         const date = new Date();
         const year = date.getFullYear();
-        const prefix = `SH-${year}`;
-        const lastIdResult = await pool.query("SELECT id FROM shipments WHERE id LIKE $1 ORDER BY id DESC LIMIT 1", [`${prefix}-%`]);
+        // Matches S2026-... or A2026-... (_ wildcard for single char)
+        const pattern = `_${year}-%`;
+        const lastIdResult = await pool.query(
+            "SELECT MAX(CAST(SUBSTRING(id FROM '-([0-9]+)$') AS INTEGER)) as max_seq FROM shipments WHERE id LIKE $1",
+            [pattern]
+        );
         let nextIdNum = 1;
-        if (lastIdResult.rows.length > 0) {
-            const parts = lastIdResult.rows[0].id.split('-');
-            if (parts.length === 3) nextIdNum = parseInt(parts[2]) + 1;
+        if (lastIdResult.rows.length > 0 && lastIdResult.rows[0].max_seq) {
+            nextIdNum = lastIdResult.rows[0].max_seq + 1;
         }
 
         await pool.query('BEGIN');
@@ -113,7 +115,9 @@ router.post('/import', authenticateToken, upload.single('file'), async (req, res
                 const shipmentNo = normalizedRow['shipment no'] || normalizedRow['shipment_no'] || normalizedRow['id'];
                 let id = shipmentNo;
                 if (!id) {
-                    id = `${prefix}-${String(nextIdNum).padStart(3, '0')}`;
+                    const transportMode = normalizedRow['transport_mode'] || normalizedRow['transport mode'] || 'SEA';
+                    const prefixChar = (String(transportMode).toUpperCase() === 'SEA') ? 'S' : 'A';
+                    id = `${prefixChar}${year}-${String(nextIdNum).padStart(3, '0')}`;
                     nextIdNum++;
                 }
                 const status = 'New';
@@ -305,7 +309,7 @@ router.post('/', authenticateToken, shipmentUpload, async (req, res) => {
             billing_contact, shipment_type
         } = req.body;
 
-        const id = await generateShipmentId();
+        const id = await generateShipmentId(transport_mode);
         const status = 'New';
         const progress = 0;
 
