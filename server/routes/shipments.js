@@ -301,7 +301,8 @@ router.post('/', authenticateToken, shipmentUpload, async (req, res) => {
             description, weight, dimensions, price,
             date, expected_delivery_date, transport_mode,
             driver, vehicle_id, service,
-            job_invoice_no
+            job_invoice_no,
+            billing_contact, shipment_type
         } = req.body;
 
         const id = await generateShipmentId();
@@ -326,8 +327,8 @@ router.post('/', authenticateToken, shipmentUpload, async (req, res) => {
                 sender_name, sender_address, receiver_name, receiver_address,
                 description, weight, dimensions, price,
                 date, expected_delivery_date, transport_mode,
-                driver, vehicle_id, service
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+                driver, vehicle_id, service, billing_contact, shipment_type
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
             RETURNING *
         `;
 
@@ -336,7 +337,7 @@ router.post('/', authenticateToken, shipmentUpload, async (req, res) => {
             sender_name, sender_address, receiver_name, receiver_address,
             description, safeWeight, dimensions, safePrice,
             date, expected_delivery_date, transport_mode,
-            driver || null, vehicle_id || null, service
+            driver || null, vehicle_id || null, service, billing_contact, shipment_type
         ];
 
         const shipmentResult = await pool.query(shipmentQuery, shipmentValues);
