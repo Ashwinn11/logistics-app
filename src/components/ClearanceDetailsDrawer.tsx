@@ -6,15 +6,13 @@ interface ClearanceDetailsDrawerProps {
     onClose: () => void;
     schedule: any;
     onReschedule: (schedule: any) => void;
-    onViewJob?: (jobId: string) => void;
 }
 
 const ClearanceDetailsDrawer: React.FC<ClearanceDetailsDrawerProps> = ({
     isOpen,
     onClose,
     schedule,
-    onReschedule,
-    onViewJob
+    onReschedule
 }) => {
     if (!isOpen || !schedule) return null;
 
@@ -128,12 +126,6 @@ const ClearanceDetailsDrawer: React.FC<ClearanceDetailsDrawerProps> = ({
 
                     {/* Footer */}
                     <div className="p-6 border-t border-gray-100 flex gap-3 bg-gray-50">
-                        <button
-                            onClick={() => onViewJob && onViewJob(schedule.job_id)}
-                            className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors shadow-sm"
-                        >
-                            View Job Details
-                        </button>
                         <button
                             onClick={() => onReschedule(schedule)}
                             className="flex-1 px-4 py-2 bg-slate-700 text-white rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors shadow-sm"

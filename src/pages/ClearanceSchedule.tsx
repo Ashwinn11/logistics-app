@@ -288,11 +288,6 @@ const ClearanceSchedule: React.FC = () => {
                             setSelectedSchedule(null);
                             handleEditClick(schedule);
                         }}
-                        onViewJob={(jobId) => {
-                            // Placeholder for navigation
-                            console.log('Navigate to job', jobId);
-                            alert(`Navigate to Job Details for ${jobId} (Coming Soon)`);
-                        }}
                     />
                 )}
             </div>
