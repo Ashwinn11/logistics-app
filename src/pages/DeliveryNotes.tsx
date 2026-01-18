@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Layout from '../components/Layout';
 import {
-    Search, Eye, Printer, ChevronDown,
+    Search, Printer, ChevronDown,
     X, Download, Upload
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
