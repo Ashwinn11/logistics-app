@@ -109,7 +109,7 @@ const DeliveryNoteDrawer: React.FC<DeliveryNoteDrawerProps> = ({ isOpen, onClose
                                 return (
                                     <div key={schedule.id} className="bg-gray-50 rounded-xl border border-gray-100 overflow-hidden">
                                         <div className="bg-white border-b border-gray-100 p-4">
-                                            <h3 className="font-bold text-indigo-900 text-sm">{schedule.bl_awb_no || schedule.job_id}</h3>
+                                            <h3 className="font-bold text-indigo-900 text-sm">{schedule.bl_awb_no || '-'}</h3>
                                         </div>
 
                                         <div className="p-4 space-y-4">
