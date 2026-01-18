@@ -130,7 +130,7 @@ const DeliveryNotes: React.FC = () => {
             const canvas = await html2canvas(element, {
                 scale: 2,
                 useCORS: true,
-                logging: false,
+                logging: true,
                 windowWidth: element.scrollWidth,
                 windowHeight: element.scrollHeight
             });
@@ -149,7 +149,7 @@ const DeliveryNotes: React.FC = () => {
             pdf.save(`DeliveryNote_${selectedNote?.id || 'doc'}.pdf`);
         } catch (error) {
             console.error('PDF Generation Failed', error);
-            alert('Failed to generate PDF. Please try printing to PDF instead.');
+            alert(`Failed to generate PDF: ${error instanceof Error ? error.message : String(error)}. Please try printing to PDF instead.`);
         }
     };
 
@@ -164,7 +164,7 @@ const DeliveryNotes: React.FC = () => {
             >
                 {/* Header Image */}
                 <div className="w-full relative">
-                    <img src={seaflowHeader} alt="Header" className="w-full h-auto object-cover max-h-48" />
+                    <img src={seaflowHeader} alt="Header" className="w-full h-auto object-cover max-h-48" crossOrigin="anonymous" />
                 </div>
 
                 <div className="p-8 flex-1">
@@ -172,7 +172,7 @@ const DeliveryNotes: React.FC = () => {
                         <div className="w-1/2 flex items-center gap-4">
                             {/* Logo and Address */}
                             <div className="w-20 h-20 flex-shrink-0">
-                                <img src={seaflowLogo} alt="Logo" className="w-full h-full object-contain" />
+                                <img src={seaflowLogo} alt="Logo" className="w-full h-full object-contain" crossOrigin="anonymous" />
                             </div>
                             <div>
                                 <h2 className="text-xl font-bold text-sky-900 italic leading-tight">Seaflow Logistics</h2>
@@ -260,7 +260,7 @@ const DeliveryNotes: React.FC = () => {
                                         </div>
                                     </div>
                                     <div className="absolute bottom-1 right-2 w-20 h-20 opacity-80 pointer-events-none mix-blend-multiply">
-                                        <img src={seaflowDigitalSeal} alt="Seal" className="w-full h-full object-contain" />
+                                        <img src={seaflowDigitalSeal} alt="Seal" className="w-full h-full object-contain" crossOrigin="anonymous" />
                                     </div>
                                 </div>
 
@@ -307,7 +307,7 @@ const DeliveryNotes: React.FC = () => {
 
                 {/* Footer Image */}
                 <div className="w-full mt-auto">
-                    <img src={seaflowFooter} alt="Footer" className="w-full h-auto object-cover" />
+                    <img src={seaflowFooter} alt="Footer" className="w-full h-auto object-cover" crossOrigin="anonymous" />
                 </div>
             </div>
         </div>
