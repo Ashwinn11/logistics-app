@@ -129,7 +129,7 @@ const DeliveryNotes: React.FC = () => {
                             <img src={seaflowLogo} alt="Logo" className="w-full h-full object-contain" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-blue-600 italic leading-tight">Seaflow Logistics</h2>
+                            <h2 className="text-xl font-bold text-sky-900 italic leading-tight">Seaflow Logistics</h2>
                             <p className="text-[10px] text-gray-600 leading-snug">H.Fusthalhaanage, 7th Floor,</p>
                             <p className="text-[10px] text-gray-600 leading-snug">Ameer Ahmed Magu, Male', 20030,</p>
                             <p className="text-[10px] text-gray-600 leading-snug">e: info@seaflow.mv, ph: +960 300 7633</p>
