@@ -195,23 +195,59 @@ const DeliveryNotes: React.FC = () => {
                 </div>
 
                 {/* Signatures */}
-                <div className="border border-gray-800 grid grid-cols-2 mb-8 relative">
-                    <div className="p-0 relative">
+                {/* Signatures */}
+                <div className="border border-gray-800 flex mb-8 text-xs">
+                    {/* GOODS DELIVERED BY (Takes up 2/3 of width) */}
+                    <div className="w-2/3 border-r border-gray-800 flex flex-col">
                         <div className="bg-gray-200 p-2 font-bold border-b border-gray-800">GOODS DELIVERED BY</div>
-                        <div className="p-4 grid grid-cols-[80px_1fr] gap-4 min-h-[100px]">
-                            <span className="font-bold">Name:</span> <span>{selectedNote?.issued_by}</span>
-                            <span className="font-bold">Signature:</span> <span></span>
-                            <div className="absolute bottom-2 right-12 w-24 h-24 opacity-80 pointer-events-none mix-blend-multiply">
-                                <img src={seaflowDigitalSeal} alt="Seal" className="w-full h-full object-contain" />
+                        <div className="grid grid-cols-2 flex-grow h-32">
+                            {/* Column 1: Issued By + Seal */}
+                            <div className="p-2 border-r border-gray-800 relative flex flex-col justify-between">
+                                <div>
+                                    <div className="grid grid-cols-[60px_1fr] gap-2 mb-2">
+                                        <span className="font-bold">Name:</span>
+                                        <span className="uppercase">{selectedNote?.issued_by}</span>
+                                    </div>
+                                    <div className="grid grid-cols-[60px_1fr] gap-2">
+                                        <span className="font-bold">Signature:</span>
+                                        <div className="border-b border-gray-400 h-8"></div>
+                                    </div>
+                                </div>
+                                <div className="absolute bottom-1 right-2 w-20 h-20 opacity-80 pointer-events-none mix-blend-multiply">
+                                    <img src={seaflowDigitalSeal} alt="Seal" className="w-full h-full object-contain" />
+                                </div>
+                            </div>
+
+                            {/* Column 2: Driver */}
+                            <div className="p-2 relative flex flex-col">
+                                <div className="grid grid-cols-[60px_1fr] gap-2 mb-2">
+                                    <span className="font-bold">Name:</span>
+                                    <span className="uppercase">
+                                        {selectedNote?.vehicles && selectedNote.vehicles.length > 0
+                                            ? `${selectedNote.vehicles[0].driver_name} / ${selectedNote.vehicles[0].driver_contact}`
+                                            : ''}
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-[60px_1fr] gap-2">
+                                    <span className="font-bold">Signature:</span>
+                                    <div className="border-b border-gray-400 h-8"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="p-0 border-l border-gray-800">
+                    {/* GOODS RECEIVED BY (Takes up 1/3 of width) */}
+                    <div className="w-1/3 flex flex-col">
                         <div className="bg-gray-200 p-2 font-bold border-b border-gray-800">GOODS RECEIVED BY</div>
-                        <div className="p-4 grid grid-cols-[80px_1fr] gap-4 min-h-[100px]">
-                            <span className="font-bold">Name:</span> <span></span>
-                            <span className="font-bold">Signature:</span>
+                        <div className="p-2 flex-grow flex flex-col h-32">
+                            <div className="grid grid-cols-[60px_1fr] gap-2 mb-2">
+                                <span className="font-bold">Name:</span>
+                                <div className="border-b border-gray-400 h-4"></div>
+                            </div>
+                            <div className="grid grid-cols-[60px_1fr] gap-2">
+                                <span className="font-bold">Signature:</span>
+                                <div className="border-b border-gray-400 h-8"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
