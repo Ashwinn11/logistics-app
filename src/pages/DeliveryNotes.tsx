@@ -549,9 +549,6 @@ const DeliveryNotes: React.FC = () => {
                                                     <button className="p-1 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors" onClick={(e) => { e.stopPropagation(); setSelectedNote(note); setActiveTab('document'); }}>
                                                         <Printer className="w-4 h-4" />
                                                     </button>
-                                                    <button className="p-1 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors" onClick={(e) => { e.stopPropagation(); handleViewDetails(note, 'document'); }}>
-                                                        <Eye className="w-4 h-4" />
-                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
