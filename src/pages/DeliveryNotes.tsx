@@ -186,7 +186,7 @@ const DeliveryNotes: React.FC = () => {
                     <div className="flex justify-between items-start mb-8 mt-2">
                         <div className="w-1/2 flex items-center gap-4">
                             {/* Logo and Address */}
-                            <div className="w-20 h-20 flex-shrink-0">
+                            <div className="w-15 h-15 flex-shrink-0">
                                 <img src={seaflowLogo} alt="Logo" className="w-full h-full object-contain" crossOrigin="anonymous" />
                             </div>
                             <div>
@@ -273,7 +273,7 @@ const DeliveryNotes: React.FC = () => {
                                             <div className="border-b border-gray-400 h-8"></div>
                                         </div>
                                     </div>
-                                    <div className="absolute bottom-1 right-2 w-15 h-15 opacity-80 pointer-events-none mix-blend-multiply">
+                                    <div className="absolute bottom-1 w-15 h-15">
                                         <img src={seaflowDigitalSeal} alt="Seal" className="w-full h-full object-contain" crossOrigin="anonymous" />
                                     </div>
                                 </div>
