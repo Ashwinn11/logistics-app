@@ -164,8 +164,8 @@ const DeliveryNotes: React.FC = () => {
                 className="bg-white text-sm font-mono relative flex flex-col shadow-lg mx-auto"
                 style={{
                     width: '210mm',
-                    minHeight: '250mm',
-                    height: '250mm', // Fixed A4 height
+                    minHeight: '297mm',
+                    height: '297mm', // Fixed A4 height
                     padding: '0',
                     margin: '0',
                     boxSizing: 'border-box'
@@ -177,7 +177,7 @@ const DeliveryNotes: React.FC = () => {
                         src={seaflowHeader}
                         alt="Header"
                         className="w-full h-auto block"
-                        style={{ width: 'auto', height: 'auto', display: 'block' }}
+                        style={{ width: '100%', height: '80%', display: 'block' }}
                         crossOrigin="anonymous"
                     />
                 </div>
