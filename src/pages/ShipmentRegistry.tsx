@@ -17,6 +17,33 @@ import SearchableSelect from '../components/SearchableSelect';
 
 const PACKAGE_TYPES = ['PALLET', 'BUNDLES', 'CARTON', 'PKG', 'BOX', 'CASE', 'BULK', 'UNIT'];
 
+
+interface PackageDetail {
+    count: string | number;
+    weight: string | number;
+    type: string;
+}
+
+interface JobFormData {
+    service: string;
+    consignee: string;
+    exporter: string;
+    transport_mode: string;
+    shipment_type: string;
+    billing_contact_same: boolean;
+    billing_contact: string;
+    manual_invoice_no: string;
+    bl_awb_no: string;
+    house_bl: string;
+    date: string;
+    expected_delivery_date: string;
+    loading_port: string;
+    vessel: string;
+    delivery_agent: string;
+    packages: PackageDetail[];
+    [key: string]: any; // Allow dynamic access
+}
+
 const ShipmentRegistry: React.FC = () => {
     // State
     const { user } = useAuth();
@@ -44,7 +71,7 @@ const ShipmentRegistry: React.FC = () => {
 
     // Form State (for Register New Job)
     const [isEditingJob, setIsEditingJob] = useState(false);
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<JobFormData>({
         service: 'Clearance',
         consignee: '',
         exporter: '',
@@ -210,23 +237,27 @@ const ShipmentRegistry: React.FC = () => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleCreatePackageChange = (index: number, field: string, value: any) => {
-        const newPackages = [...(formData.packages || [])];
-        newPackages[index] = { ...newPackages[index], [field]: value };
-        setFormData((prev: any) => ({ ...prev, packages: newPackages }));
+    const handleCreatePackageChange = (index: number, field: keyof PackageDetail, value: string | number) => {
+        setFormData((prev) => {
+            const newPackages = [...prev.packages];
+            newPackages[index] = { ...newPackages[index], [field]: value };
+            return { ...prev, packages: newPackages };
+        });
     };
 
     const addCreatePackage = () => {
-        setFormData((prev: any) => ({
+        setFormData((prev) => ({
             ...prev,
-            packages: [...(prev.packages || []), { count: '', weight: '', type: '' }]
+            packages: [...prev.packages, { count: '', weight: '', type: '' }]
         }));
     };
 
     const removeCreatePackage = (index: number) => {
-        const newPackages = [...(formData.packages || [])];
-        newPackages.splice(index, 1);
-        setFormData((prev: any) => ({ ...prev, packages: newPackages }));
+        setFormData((prev) => {
+            const newPackages = [...prev.packages];
+            newPackages.splice(index, 1);
+            return { ...prev, packages: newPackages };
+        });
     };
 
     const handleEditJobClick = () => {
@@ -337,8 +368,8 @@ const ShipmentRegistry: React.FC = () => {
 
             // Packages logic
             const pkgs = formData.packages || [];
-            const totalPkgs = pkgs.reduce((s: any, p: any) => s + (Number(p.count) || 0), 0);
-            const totalWeight = pkgs.reduce((s: any, p: any) => s + (Number(p.weight) || 0), 0);
+            const totalPkgs = pkgs.reduce((s: number, p: PackageDetail) => s + (Number(p.count) || 0), 0);
+            const totalWeight = pkgs.reduce((s: number, p: PackageDetail) => s + (Number(p.weight) || 0), 0);
             // Derive main package type from first package or MIXED
             const mainType = pkgs.length > 0 && pkgs[0].type ? pkgs[0].type : '';
 
