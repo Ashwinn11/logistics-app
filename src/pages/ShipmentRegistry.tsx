@@ -247,8 +247,6 @@ const ShipmentRegistry: React.FC = () => {
         try {
             setLoading(true);
 
-            // Construct FormData as expected by the backend
-            // The backend expects generic fields: sender_name, receiver_name, transport_mode, etc.
             const apiData = new FormData();
 
 
@@ -1115,70 +1113,119 @@ const ShipmentRegistry: React.FC = () => {
                                 </h3>
                                 {isEditingBL ? (
                                     <div className="flex items-center gap-2">
-                                        <button onClick={handleSaveDetails} className="p-2 bg-green-50 text-green-600 rounded-full hover:bg-green-100"><Check className="w-4 h-4" /></button>
-                                        <button onClick={handleCancelEdit} className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-100"><X className="w-4 h-4" /></button>
+                                        <button onClick={handleSaveDetails} className="p-2 bg-green-50 text-green-600 rounded-full hover:bg-green-100" title="Save">
+                                            <Check className="w-4 h-4" />
+                                        </button>
+                                        <button onClick={handleCancelEdit} className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-100" title="Cancel">
+                                            <X className="w-4 h-4" />
+                                        </button>
                                     </div>
                                 ) : (
-                                    <button onClick={() => handleEditClick('bl')} className="text-gray-400 hover:text-indigo-600 p-2 hover:bg-indigo-50 rounded-full transition-colors"><Pencil className="w-4 h-4" /></button>
+                                    <button onClick={() => handleEditClick('bl')} className="text-gray-400 hover:text-indigo-600 p-2 hover:bg-indigo-50 rounded-full transition-colors" title="Edit">
+                                        <Pencil className="w-4 h-4" />
+                                    </button>
                                 )}
                             </div>
-                            <div className="grid grid-cols-3 gap-8 gap-y-8">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 gap-y-8">
+                                {/* Row 1 */}
                                 <div>
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Master No.</p>
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Master No.</p>
                                     {isEditingBL ? (
-                                        <input name="bl_awb_no" value={editFormData.bl_awb_no || ''} onChange={handleEditChange} className="input-field py-1 border rounded px-2 w-full text-sm" placeholder="-" />
+                                        <input
+                                            name="bl_awb_no"
+                                            value={editFormData.bl_awb_no || ''}
+                                            onChange={handleEditChange}
+                                            className="input-field py-1.5 border rounded-lg px-3 w-full text-sm bg-gray-50 focus:bg-white transition-colors"
+                                            placeholder="Enter Master No"
+                                        />
                                     ) : (
                                         <p className="font-semibold text-gray-900">{selectedJob.bl_awb_no || '-'}</p>
                                     )}
                                 </div>
                                 <div>
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">ETD</p>
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">ETD</p>
                                     {isEditingBL ? (
-                                        <input type="date" name="date" value={editFormData.date ? new Date(editFormData.date).toISOString().substr(0, 10) : ''} onChange={handleEditChange} className="input-field py-1 border rounded px-2 w-full text-sm" />
+                                        <input
+                                            type="date"
+                                            name="date"
+                                            value={editFormData.date ? new Date(editFormData.date).toISOString().substr(0, 10) : ''}
+                                            onChange={handleEditChange}
+                                            className="input-field py-1.5 border rounded-lg px-3 w-full text-sm bg-gray-50 focus:bg-white transition-colors"
+                                        />
                                     ) : (
                                         <p className="font-semibold text-gray-900">{selectedJob.date ? new Date(selectedJob.date).toLocaleDateString() : '-'}</p>
                                     )}
                                 </div>
                                 <div>
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">ETA</p>
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">ETA</p>
                                     {isEditingBL ? (
-                                        <input type="date" name="expected_delivery_date" value={editFormData.expected_delivery_date ? new Date(editFormData.expected_delivery_date).toISOString().substr(0, 10) : ''} onChange={handleEditChange} className="input-field py-1 border rounded px-2 w-full text-sm" />
+                                        <input
+                                            type="date"
+                                            name="expected_delivery_date"
+                                            value={editFormData.expected_delivery_date ? new Date(editFormData.expected_delivery_date).toISOString().substr(0, 10) : ''}
+                                            onChange={handleEditChange}
+                                            className="input-field py-1.5 border rounded-lg px-3 w-full text-sm bg-gray-50 focus:bg-white transition-colors"
+                                        />
                                     ) : (
                                         <p className="font-semibold text-gray-900">{selectedJob.expected_delivery_date ? new Date(selectedJob.expected_delivery_date).toLocaleDateString() : '-'}</p>
                                     )}
                                 </div>
+
+                                {/* Row 2 */}
                                 <div>
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">House No.</p>
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">House No.</p>
                                     {isEditingBL ? (
-                                        <input name="house_bl" value={editFormData.house_bl || ''} onChange={handleEditChange} className="input-field py-1 border rounded px-2 w-full text-sm" placeholder="-" />
+                                        <input
+                                            name="house_bl"
+                                            value={editFormData.house_bl || ''}
+                                            onChange={handleEditChange}
+                                            className="input-field py-1.5 border rounded-lg px-3 w-full text-sm bg-gray-50 focus:bg-white transition-colors"
+                                            placeholder="Enter House No"
+                                        />
                                     ) : (
                                         <p className="font-semibold text-gray-900">{selectedJob.house_bl || '-'}</p>
                                     )}
                                 </div>
                                 <div>
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Loading Port</p>
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Loading Port</p>
                                     {isEditingBL ? (
-                                        <input name="loading_port" value={editFormData.loading_port || ''} onChange={handleEditChange} className="input-field py-1 border rounded px-2 w-full text-sm" placeholder="-" />
+                                        <input
+                                            name="loading_port"
+                                            value={editFormData.loading_port || editFormData.origin || ''}
+                                            onChange={handleEditChange}
+                                            className="input-field py-1.5 border rounded-lg px-3 w-full text-sm bg-gray-50 focus:bg-white transition-colors"
+                                            placeholder="Port Name"
+                                        />
                                     ) : (
-                                        <p className="font-semibold text-gray-900 uppercase">{selectedJob.loading_port || selectedJob.origin || '-'}</p>
+                                        <p className="font-semibold text-gray-900 uppercase">
+                                            {selectedJob.loading_port || selectedJob.origin || '-'}
+                                        </p>
                                     )}
                                 </div>
                                 <div>
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Vessel</p>
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Vessel</p>
                                     {isEditingBL ? (
-                                        <input name="vessel" value={editFormData.vessel || ''} onChange={handleEditChange} className="input-field py-1 border rounded px-2 w-full text-sm" placeholder="-" />
+                                        <input
+                                            name="vessel"
+                                            value={editFormData.vessel || ''}
+                                            onChange={handleEditChange}
+                                            className="input-field py-1.5 border rounded-lg px-3 w-full text-sm bg-gray-50 focus:bg-white transition-colors"
+                                            placeholder="Vessel Name"
+                                        />
                                     ) : (
                                         <p className="font-semibold text-gray-900 uppercase">{selectedJob.vessel || '-'}</p>
                                     )}
                                 </div>
+
+                                {/* Row 3 */}
                                 <div>
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Delivery Agent</p>
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Delivery Agent</p>
                                     {isEditingBL ? (
                                         <select
                                             name="delivery_agent"
                                             value={editFormData.delivery_agent || ''}
                                             onChange={handleEditChange}
-                                            className="input-field py-1 border rounded px-2 w-full text-sm bg-white"
+                                            className="input-field py-1.5 border rounded-lg px-3 w-full text-sm bg-white"
                                         >
                                             <option value="">Select Delivery Agent</option>
                                             {deliveryAgentsList.map((agent: any) => (
@@ -1191,61 +1238,83 @@ const ShipmentRegistry: React.FC = () => {
                                         <p className="font-semibold text-gray-900 uppercase">{selectedJob.delivery_agent || '-'}</p>
                                     )}
                                 </div>
-                                {isEditingBL ? (
-                                    <div className="col-span-3">
-                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Packages</label>
-                                        <div className="space-y-2">
-                                            {editFormData.packages?.map((pkg: any, idx: number) => (
-                                                <div key={idx} className="flex gap-2 items-center">
-                                                    <input
-                                                        type="number"
-                                                        placeholder="Count"
-                                                        value={pkg.count}
-                                                        onChange={e => handlePackageChange(idx, 'count', e.target.value)}
-                                                        className="w-20 input-field py-1 border rounded px-2 text-sm"
-                                                    />
-                                                    <select
-                                                        value={pkg.type}
-                                                        onChange={e => handlePackageChange(idx, 'type', e.target.value)}
-                                                        className="w-32 input-field py-1 border rounded px-2 text-sm bg-white"
-                                                    >
-                                                        {PACKAGE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                                                    </select>
-                                                    <input
-                                                        type="number"
-                                                        placeholder="Weight (KG)"
-                                                        value={pkg.weight}
-                                                        onChange={e => handlePackageChange(idx, 'weight', e.target.value)}
-                                                        className="w-24 input-field py-1 border rounded px-2 text-sm"
-                                                    />
 
-                                                    <button onClick={() => removePackage(idx)} className="text-red-400 hover:text-red-600"><X className="w-4 h-4" /></button>
+                                {/* Packages Section */}
+                                <div className="col-span-2">
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Packages</p>
+                                    {isEditingBL ? (
+                                        <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                                            <div className="space-y-3">
+                                                {editFormData.packages?.map((pkg: any, idx: number) => (
+                                                    <div key={idx} className="flex gap-3 items-center">
+                                                        <div className="flex-1">
+                                                            <input
+                                                                type="number"
+                                                                placeholder="Count"
+                                                                value={pkg.count}
+                                                                onChange={e => handlePackageChange(idx, 'count', e.target.value)}
+                                                                className="w-full input-field py-1.5 border rounded px-3 text-sm bg-white"
+                                                            />
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <select
+                                                                value={pkg.type}
+                                                                onChange={e => handlePackageChange(idx, 'type', e.target.value)}
+                                                                className="w-full input-field py-1.5 border rounded px-3 text-sm bg-white"
+                                                            >
+                                                                <option value="" disabled>Type</option>
+                                                                {PACKAGE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                                                            </select>
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <input
+                                                                type="number"
+                                                                placeholder="Weight (KG)"
+                                                                value={pkg.weight}
+                                                                onChange={e => handlePackageChange(idx, 'weight', e.target.value)}
+                                                                className="w-full input-field py-1.5 border rounded px-3 text-sm bg-white"
+                                                            />
+                                                        </div>
+                                                        <button
+                                                            onClick={() => removePackage(idx)}
+                                                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                                                            title="Remove"
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="mt-3 flex justify-between items-center pt-3 border-t border-gray-200">
+                                                <button
+                                                    onClick={addPackage}
+                                                    className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 bg-indigo-50 px-3 py-1.5 rounded hover:bg-indigo-100 transition-colors"
+                                                >
+                                                    <Plus className="w-3 h-3" /> Add Package
+                                                </button>
+                                                <div className="text-xs font-medium text-gray-500">
+                                                    Summary: <span className="text-gray-900 font-bold">{editFormData.no_of_pkgs || 0}</span> Pkgs,
+                                                    <span className="text-gray-900 font-bold ml-1">{editFormData.weight || 0}</span> KG
                                                 </div>
-                                            ))}
-                                            <button onClick={addPackage} className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
-                                                <Plus className="w-3 h-3" /> Add Package
-                                            </button>
-                                            <div className="text-xs text-gray-500 font-medium pt-2 border-t mt-2">
-                                                Total: {editFormData.no_of_pkgs} Pkgs, {editFormData.weight} KG, Type: {editFormData.package_type}
                                             </div>
                                         </div>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div>
-                                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Packages</p>
-                                            <p className="font-semibold text-gray-900">{selectedJob.no_of_pkgs || '0'}</p>
+                                    ) : (
+                                        <div className="grid grid-cols-3 gap-4">
+                                            <div>
+                                                <p className="text-[10px] text-gray-400 mb-0.5">Total Count</p>
+                                                <p className="font-semibold text-gray-900">{selectedJob.no_of_pkgs || '0'}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] text-gray-400 mb-0.5">Total Weight</p>
+                                                <p className="font-semibold text-gray-900">{selectedJob.weight || '0'} KG</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] text-gray-400 mb-0.5">Type</p>
+                                                <p className="font-semibold text-gray-900 uppercase">{selectedJob.package_type || selectedJob.pkg_type || '-'}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Weight (KG)</p>
-                                            <p className="font-semibold text-gray-900">{selectedJob.weight || '0'} KG</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Package Type</p>
-                                            <p className="font-semibold text-gray-900 uppercase">{selectedJob.package_type || '-'}</p>
-                                        </div>
-                                    </>
-                                )}
+                                    )}
+                                </div>
                             </div>
                         </div>
 
