@@ -306,10 +306,10 @@ const ShipmentRegistry: React.FC = () => {
             return [{
                 count: job.no_of_pkgs,
                 weight: job.weight,
-                type: job.package_type || 'BUNDLES'
+                type: job.package_type || ''
             }];
         }
-        return [{ count: '', weight: '', type: 'BUNDLES' }];
+        return [{ count: '', weight: '', type: '' }];
     };
 
     const handleOpenPopup = (type: any, job: any) => {
@@ -321,8 +321,8 @@ const ShipmentRegistry: React.FC = () => {
         }
         if (type === 'schedule') {
             initialData.date = new Date().toISOString().split('T')[0];
-            initialData.type = 'Normal';
-            initialData.port = 'MALE';
+            initialData.type = '';
+            initialData.port = '';
             initialData.bl_awb = job.bl_awb_no || '';
 
         }
@@ -350,7 +350,7 @@ const ShipmentRegistry: React.FC = () => {
     const addPackage = () => {
         setEditFormData((prev: any) => ({
             ...prev,
-            packages: [...(prev.packages || []), { count: '', weight: '', type: 'BUNDLES' }]
+            packages: [...(prev.packages || []), { count: '', weight: '', type: '' }]
         }));
     };
 
