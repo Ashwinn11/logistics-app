@@ -1300,10 +1300,10 @@ const ShipmentRegistry: React.FC = () => {
                                             value={editFormData.loading_port || ''}
                                             onChange={handleEditChange}
                                             className="input-field py-1.5 border rounded-lg px-3 w-full text-sm bg-gray-50 focus:bg-white transition-colors"
-                                            placeholder="Vessel Name"
+                                            placeholder="Port Name"
                                         />
                                     ) : (
-                                        <p className="font-semibold text-gray-900 uppercase">{selectedJob.vessel || '-'}</p>
+                                        <p className="font-semibold text-gray-900 uppercase">{selectedJob.loading_port || '-'}</p>
                                     )}
                                 </div>
                                 <div>
