@@ -407,12 +407,20 @@ const ShipmentRegistry: React.FC = () => {
         const totalPkgs = newPackages.reduce((sum, p) => sum + (Number(p.count) || 0), 0);
         const totalWeight = newPackages.reduce((sum, p) => sum + (Number(p.weight) || 0), 0);
 
+        // Determine derived type
+        let derivedType = '';
+        if (newPackages.length === 1) {
+            derivedType = newPackages[0].type || '';
+        } else if (newPackages.length > 1) {
+            derivedType = 'MIXED';
+        }
+
         setEditFormData((prev: any) => ({
             ...prev,
             packages: newPackages,
             no_of_pkgs: totalPkgs,
             weight: totalWeight,
-            package_type: newPackages.length === 1 ? newPackages[0].type : 'MIXED'
+            package_type: derivedType
         }));
     };
 
@@ -428,11 +436,19 @@ const ShipmentRegistry: React.FC = () => {
         const totalPkgs = newPackages.reduce((sum: number, p: any) => sum + (Number(p.count) || 0), 0);
         const totalWeight = newPackages.reduce((sum: number, p: any) => sum + (Number(p.weight) || 0), 0);
 
+        let derivedType = '';
+        if (newPackages.length === 1) {
+            derivedType = newPackages[0].type || '';
+        } else if (newPackages.length > 1) {
+            derivedType = 'MIXED';
+        }
+
         setEditFormData((prev: any) => ({
             ...prev,
             packages: newPackages,
             no_of_pkgs: totalPkgs,
-            weight: totalWeight
+            weight: totalWeight,
+            package_type: derivedType
         }));
     };
 
