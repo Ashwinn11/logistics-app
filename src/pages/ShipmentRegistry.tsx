@@ -237,28 +237,7 @@ const ShipmentRegistry: React.FC = () => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleCreatePackageChange = (index: number, field: keyof PackageDetail, value: string | number) => {
-        setFormData((prev) => {
-            const newPackages = [...prev.packages];
-            newPackages[index] = { ...newPackages[index], [field]: value };
-            return { ...prev, packages: newPackages };
-        });
-    };
 
-    const addCreatePackage = () => {
-        setFormData((prev) => ({
-            ...prev,
-            packages: [...prev.packages, { count: '', weight: '', type: '' }]
-        }));
-    };
-
-    const removeCreatePackage = (index: number) => {
-        setFormData((prev) => {
-            const newPackages = [...prev.packages];
-            newPackages.splice(index, 1);
-            return { ...prev, packages: newPackages };
-        });
-    };
 
     const handleEditJobClick = () => {
         setFormData({
@@ -354,19 +333,21 @@ const ShipmentRegistry: React.FC = () => {
             apiData.append('weight', '0'); // default
             apiData.append('price', '0');  // default
 
-            // Default dates or user inputs
+
+            // Default dates or user inputs (though now UI input is removed, defaults will primarily be used)
             apiData.append('date', formData.date || new Date().toISOString());
             apiData.append('expected_delivery_date', formData.expected_delivery_date || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString());
 
-            // BL/AWB Fields
-            apiData.append('bl_awb_no', formData.bl_awb_no || '');
-            apiData.append('house_bl', formData.house_bl || '');
-            apiData.append('loading_port', formData.loading_port || '');
-            apiData.append('origin', formData.loading_port || 'China'); // Fallback/Sync
-            apiData.append('vessel', formData.vessel || '');
-            apiData.append('delivery_agent', formData.delivery_agent || '');
+            // BL/AWB Fields - Optional/Empty at creation now
+            apiData.append('bl_awb_no', '');
+            apiData.append('house_bl', '');
+            apiData.append('loading_port', '');
+            apiData.append('origin', 'China'); // Default fallback
+            apiData.append('vessel', '');
+            apiData.append('delivery_agent', '');
 
-            // Packages logic
+            // Packages logic - simplified as UI input is removed
+            // Just send defaults or empty checks if for some reason state has data
             const pkgs = formData.packages || [];
             const totalPkgs = pkgs.reduce((s: number, p: PackageDetail) => s + (Number(p.count) || 0), 0);
             const totalWeight = pkgs.reduce((s: number, p: PackageDetail) => s + (Number(p.weight) || 0), 0);
@@ -794,147 +775,9 @@ const ShipmentRegistry: React.FC = () => {
                     </div>
                 </div>
 
-                {/* BL/AWB Details Section */}
-                <div className="bg-gray-50/50 p-6 rounded-xl border border-gray-100">
-                    <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-gray-400" />
-                        BL/AWB Details
-                    </h3>
-                    <div className="grid grid-cols-2 gap-6 mb-4">
-                        <div className="form-group">
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Master No.</label>
-                            <input
-                                name="bl_awb_no"
-                                value={formData.bl_awb_no || ''}
-                                onChange={handleInputChange}
-                                className="w-full p-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all outline-none text-gray-700"
-                                placeholder="Enter Master No"
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">House No.</label>
-                            <input
-                                name="house_bl"
-                                value={formData.house_bl || ''}
-                                onChange={handleInputChange}
-                                className="w-full p-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all outline-none text-gray-700"
-                                placeholder="Enter House No"
-                            />
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-6 mb-4">
-                        <div className="form-group">
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">ETD</label>
-                            <input
-                                type="date"
-                                name="date"
-                                value={formData.date ? new Date(formData.date).toISOString().substr(0, 10) : ''}
-                                onChange={handleInputChange}
-                                className="w-full p-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all outline-none text-gray-700"
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">ETA</label>
-                            <input
-                                type="date"
-                                name="expected_delivery_date"
-                                value={formData.expected_delivery_date ? new Date(formData.expected_delivery_date).toISOString().substr(0, 10) : ''}
-                                onChange={handleInputChange}
-                                className="w-full p-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all outline-none text-gray-700"
-                            />
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-6 mb-4">
-                        <div className="form-group">
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Loading Port</label>
-                            <input
-                                name="loading_port"
-                                value={formData.loading_port || ''}
-                                onChange={handleInputChange}
-                                className="w-full p-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all outline-none text-gray-700"
-                                placeholder="Enter Port"
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Vessel</label>
-                            <input
-                                name="vessel"
-                                value={formData.vessel || ''}
-                                onChange={handleInputChange}
-                                className="w-full p-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all outline-none text-gray-700"
-                                placeholder="Enter Vessel"
-                            />
-                        </div>
-                    </div>
-                    <div className="form-group mb-6">
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Delivery Agent</label>
-                        <select
-                            name="delivery_agent"
-                            value={formData.delivery_agent || ''}
-                            onChange={handleInputChange}
-                            className="w-full p-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all outline-none text-gray-700"
-                        >
-                            <option value="">Select Delivery Agent</option>
-                            {deliveryAgentsList.map((agent: any) => (
-                                <option key={agent.id} value={agent.name}>
-                                    {agent.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
 
-                    {/* Packages Sub-Section */}
-                    <div className="bg-white p-4 rounded-lg border border-gray-200">
-                        <label className="block text-sm font-semibold text-gray-700 mb-3">Packages</label>
-                        <div className="space-y-3">
-                            {formData.packages?.map((pkg: any, idx: number) => (
-                                <div key={idx} className="flex gap-3 items-center">
-                                    <div className="flex-1">
-                                        <input
-                                            type="number"
-                                            placeholder="Count"
-                                            value={pkg.count}
-                                            onChange={e => handleCreatePackageChange(idx, 'count', e.target.value)}
-                                            className="w-full p-2 border border-gray-200 rounded text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                                        />
-                                    </div>
-                                    <div className="flex-1">
-                                        <select
-                                            value={pkg.type}
-                                            onChange={e => handleCreatePackageChange(idx, 'type', e.target.value)}
-                                            className="w-full p-2 border border-gray-200 rounded text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                                        >
-                                            <option value="" disabled>Type</option>
-                                            {PACKAGE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className="flex-1">
-                                        <input
-                                            type="number"
-                                            placeholder="Weight (KG)"
-                                            value={pkg.weight}
-                                            onChange={e => handleCreatePackageChange(idx, 'weight', e.target.value)}
-                                            className="w-full p-2 border border-gray-200 rounded text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                                        />
-                                    </div>
-                                    <button
-                                        onClick={() => removeCreatePackage(idx)}
-                                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
-                                        title="Remove"
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                        <button
-                            onClick={addCreatePackage}
-                            className="mt-3 text-sm font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 bg-indigo-50 px-3 py-1.5 rounded hover:bg-indigo-100 transition-colors"
-                        >
-                            <Plus className="w-3 h-3" /> Add Package
-                        </button>
-                    </div>
-                </div>
+                {/* BL/AWB Details Section Removed as per request */}
+
 
                 {/* Section F: Billing Contact */}
                 <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
