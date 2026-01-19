@@ -394,11 +394,17 @@ const ShipmentRegistry: React.FC = () => {
             // Sanitize data before sending
             const updatedData = { ...editFormData };
 
-            // Sync Loading Port fields (backend likely uses 'origin' but UI uses 'loading_port')
-            if (updatedData.loading_port) {
-                updatedData.origin = updatedData.loading_port;
-            } else if (updatedData.origin) {
-                updatedData.loading_port = updatedData.origin;
+            // Sync Loading Port fields - cover all bases
+            const portValue = updatedData.loading_port || updatedData.origin || updatedData.port_of_loading;
+            if (portValue) {
+                updatedData.loading_port = portValue;
+                updatedData.origin = portValue;
+                updatedData.port_of_loading = portValue;
+            }
+
+            // Sync Package Type
+            if (updatedData.package_type) {
+                updatedData.pkg_type = updatedData.package_type;
             }
 
             // Sync null dates
@@ -406,10 +412,14 @@ const ShipmentRegistry: React.FC = () => {
             if (updatedData.expected_delivery_date === '') updatedData.expected_delivery_date = null;
             if (updatedData.date === '') updatedData.date = null;
 
-            const response = await shipmentsAPI.update(selectedJob.id, updatedData);
-            const updated = response.data;
-            setSelectedJob(updated);
-            setJobs(prev => prev.map(j => j.id === updated.id ? updated : j));
+            await shipmentsAPI.update(selectedJob.id, updatedData);
+
+            // Force fetch fresh data to confirm what was actually saved
+            const freshJobRes = await shipmentsAPI.getById(selectedJob.id);
+            const freshJob = freshJobRes.data;
+
+            setSelectedJob(freshJob);
+            setJobs(prev => prev.map(j => j.id === freshJob.id ? freshJob : j));
             setEditingSection(null);
         } catch (error) {
             console.error("Update failed", error);
