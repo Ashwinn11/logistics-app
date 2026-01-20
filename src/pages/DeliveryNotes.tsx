@@ -31,11 +31,12 @@ interface DeliveryNoteItem {
 
 interface DeliveryNoteVehicle {
     id: number;
-    vehicle_id: string;
+    vehicle_id: string; // This is the ID stored in DB (Registration No)
+    vehicle_name?: string; // Fetched from join
+    registration_number?: string; // Fetched from join (redundant but explicit)
     driver_name: string;
     driver_contact: string;
     discharge_location: string;
-    registration_number?: string;
     vehicle_type?: string;
 }
 
@@ -312,7 +313,7 @@ const DeliveryNotes: React.FC = () => {
                                                 <>
                                                     <span>{selectedNote.vehicles[0].driver_name}</span>
                                                     <span>{selectedNote.vehicles[0].driver_contact}</span>
-                                                    <span>{selectedNote.vehicles[0].vehicle_id}</span>
+                                                    <span>{selectedNote.vehicles[0].vehicle_name || selectedNote.vehicles[0].vehicle_id || '-'}</span>
                                                 </>
                                             ) : (
                                                 <span>-</span>

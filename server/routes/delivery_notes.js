@@ -156,16 +156,28 @@ router.get('/:id', authenticateToken, async (req, res) => {
         const dn = dnResult.rows[0];
 
         // Fetch Items with Shipment Details (BL/AWB, etc.)
+        // Fetch Items with Shipment Details
+        // Joining to get BL/AWB, Shipper (Sender), Packages from shipments table
         const itemsResult = await pool.query(`
-            SELECT dni.*, s.bl_awb_no, s.sender_name, s.packages, s.package_type, s.container_no
+            SELECT dni.*, 
+                   s.bl_awb_no, 
+                   s.sender_name, 
+                   s.packages, 
+                   s.package_type, 
+                   s.container_no
             FROM delivery_note_items dni
             LEFT JOIN shipments s ON dni.job_id = s.id
             WHERE dni.delivery_note_id = $1
         `, [id]);
 
         // Fetch Vehicles
+        // Joining to get Vehicle Name/Registration if vehicle_id exists
+        // Note: vehicle_id in delivery_note_vehicles might be the registration number (string) based on fleet import logic
         const vehiclesResult = await pool.query(`
-            SELECT dnv.*, v.id as registration_number, v.type as vehicle_type
+            SELECT dnv.*, 
+                   v.name as vehicle_name, 
+                   v.id as registration_number, -- In current fleet schema, id IS the registration number
+                   v.type as vehicle_type
             FROM delivery_note_vehicles dnv
             LEFT JOIN vehicles v ON dnv.vehicle_id = v.id
             WHERE dnv.delivery_note_id = $1
