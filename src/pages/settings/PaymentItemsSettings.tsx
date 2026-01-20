@@ -132,28 +132,16 @@ const PaymentItemsSettings: React.FC = () => {
     };
 
     return (
-        <div className="flex-1 flex flex-col h-full bg-white">
-            <div className="px-8 py-8 flex items-center justify-between">
+        <div className="flex-1 flex flex-col h-full bg-white font-sans">
+            {/* Header Section */}
+            <div className="px-10 py-8 flex items-start justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Payment Items</h1>
-                    <p className="text-gray-500 mt-1">Manage payment types and default vendors</p>
+                    <h1 className="text-2xl font-bold text-gray-900">Payment Items</h1>
+                    <p className="text-gray-500 mt-1 text-sm">Standardize payable line items and link them to vendors</p>
                 </div>
-            </div>
-
-            <div className="px-8 mb-6 flex justify-between items-center gap-4">
-                <div className="flex-1 relative max-w-md">
-                    <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder="Search payment items..."
-                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none text-sm focus:ring-2 focus:ring-black/5"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-
-                </div>
-                <div className="flex gap-3">
-                    <label className={`px-4 py-2 bg-white border border-gray-200 text-gray-700 font-semibold rounded-lg shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm cursor-pointer ${importing ? 'opacity-50 cursor-wait' : ''}`}>
+                <div className="flex items-center gap-3">
+                    {/* Import/Delete Actions moved here to keep search area clean like screenshot */}
+                    <label className={`px-4 py-2 bg-white border border-gray-200 text-gray-700 font-medium rounded-full cursor-pointer hover:bg-gray-50 transition-colors text-sm flex items-center gap-2 ${importing ? 'opacity-50 cursor-wait' : ''}`}>
                         <FileUp className="w-4 h-4" />
                         {importing ? 'Importing...' : 'Import Excel'}
                         <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleFileUpload} disabled={importing} />
@@ -171,10 +159,10 @@ const PaymentItemsSettings: React.FC = () => {
                                 }
                             }
                         }}
-                        className="px-4 py-2 bg-red-50 text-red-600 font-semibold rounded-lg shadow-sm hover:bg-red-100 transition-colors flex items-center gap-2 text-sm"
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                        title="Delete All Items"
                     >
-                        <Trash2 className="w-4 h-4" />
-                        Delete All
+                        <Trash2 className="w-5 h-5" />
                     </button>
                     <button
                         onClick={() => {
@@ -182,61 +170,81 @@ const PaymentItemsSettings: React.FC = () => {
                             setFormData({ name: '', vendor_id: '' });
                             setShowModal(true);
                         }}
-                        className="px-4 py-2 bg-[#FCD34D] text-black font-semibold rounded-lg shadow-sm hover:bg-[#FBBF24] transition-colors flex items-center gap-2 text-sm"
+                        className="px-6 py-2.5 bg-black text-white font-medium rounded-full hover:bg-gray-800 transition-colors text-sm"
                     >
-                        <Plus className="w-4 h-4" />
-                        Add Manually
+                        Create Payment Item
                     </button>
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-8 pb-8 custom-scrollbar">
+            {/* Search Section */}
+            <div className="px-10 mb-8 max-w-4xl">
+                <label className="block text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-2">
+                    SEARCH PAYMENT ITEMS
+                </label>
+                <div className="relative">
+                    <Search className="absolute left-4 top-3.5 w-4 h-4 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder="Search by item name or vendor"
+                        className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-lg outline-none text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                <p className="text-xs text-gray-400 mt-2">
+                    Showing {filteredItems.length} of {items.length} payment items
+                </p>
+            </div>
+
+            {/* Table Section */}
+            <div className="flex-1 overflow-y-auto px-10 pb-10 custom-scrollbar">
                 {loading ? (
-                    <div className="text-center py-10 text-gray-500">Loading items...</div>
+                    <div className="text-center py-20 text-gray-500">Loading payment items...</div>
                 ) : filteredItems.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-64 text-center border-2 border-dashed border-gray-200 rounded-lg bg-gray-50/50">
-                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                            <CreditCard className="w-6 h-6 text-gray-400" />
-                        </div>
-                        <h3 className="text-lg font-medium text-gray-900">No payment items found</h3>
-                        <p className="text-sm text-gray-500 mt-1">
-                            Get started by adding a new payment item.
-                        </p>
+                    <div className="text-center py-20 border-2 border-dashed border-gray-100 rounded-xl">
+                        <p className="text-gray-500">No payment items found.</p>
                     </div>
                 ) : (
-                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="w-full">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="bg-black text-white text-xs uppercase tracking-wider">
-                                    <th className="py-3 px-4 font-semibold">Payment Item Name</th>
-                                    <th className="py-3 px-4 font-semibold">Vendor</th>
-                                    <th className="py-3 px-4 font-semibold w-24 text-right">Actions</th>
+                                <tr className="bg-black text-white text-xs font-semibold tracking-wider">
+                                    <th className="py-4 px-6 rounded-tl-lg">Payment Item</th>
+                                    <th className="py-4 px-6">Vendor</th>
+                                    <th className="py-4 px-6 w-32 rounded-tr-lg">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 {filteredItems.map((item) => (
-                                    <tr key={item.id} className="hover:bg-gray-50 transition-colors text-sm">
-                                        <td className="py-3 px-4 font-semibold text-gray-900">{item.name}</td>
-                                        <td className="py-3 px-4 text-gray-600">
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${item.vendor_id ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
-                                                {getVendorName(item.vendor_id)}
-                                            </span>
+                                    <tr key={item.id} className="hover:bg-blue-50/30 transition-colors group border-b border-gray-50 last:border-none">
+                                        <td className="py-6 px-6 text-sm font-medium text-gray-900">
+                                            {item.name}
                                         </td>
-                                        <td className="py-3 px-4 text-right flex justify-end gap-2">
-                                            <button
-                                                onClick={() => handleEdit(item)}
-                                                className="text-gray-300 hover:text-blue-600 transition-colors"
-                                                title="Edit"
-                                            >
-                                                <Edit2 className="w-4 h-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(item.id)}
-                                                className="text-gray-300 hover:text-red-600 transition-colors"
-                                                title="Delete"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
+                                        <td className="py-6 px-6 text-sm">
+                                            {item.vendor_id ? (
+                                                <span className="text-gray-700">{getVendorName(item.vendor_id)}</span>
+                                            ) : (
+                                                <span className="text-blue-500 font-medium">Unassigned</span>
+                                            )}
+                                        </td>
+                                        <td className="py-6 px-6">
+                                            <div className="flex items-center gap-3">
+                                                <button
+                                                    onClick={() => handleEdit(item)}
+                                                    className="w-8 h-8 rounded-full border border-blue-200 text-blue-500 flex items-center justify-center hover:bg-blue-50 transition-colors"
+                                                    title="Edit"
+                                                >
+                                                    <Edit2 className="w-3.5 h-3.5" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(item.id)}
+                                                    className="w-8 h-8 rounded-md border border-red-100 text-red-400 flex items-center justify-center hover:bg-red-50 transition-colors"
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -248,21 +256,23 @@ const PaymentItemsSettings: React.FC = () => {
 
             {/* Modal */}
             {showModal && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-                        <div className="px-6 py-4 flex justify-between items-center">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/25 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-[500px] overflow-hidden animate-in fade-in zoom-in duration-200">
+                        {/* Modal Header */}
+                        <div className="px-6 py-5 flex justify-between items-center border-b border-gray-100">
                             <h3 className="font-bold text-lg text-gray-900">Payment Item</h3>
-                            <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-colors">
+                            <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-50 transition-colors">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="p-6 pt-2">
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Vendor</label>
+                        {/* Modal Content */}
+                        <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                            <div className="space-y-1.5">
+                                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Vendor</label>
+                                <div className="relative">
                                     <select
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm bg-white"
+                                        className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all text-sm text-gray-700 appearance-none cursor-pointer"
                                         value={formData.vendor_id}
                                         onChange={e => setFormData({ ...formData, vendor_id: e.target.value })}
                                     >
@@ -273,26 +283,28 @@ const PaymentItemsSettings: React.FC = () => {
                                             </option>
                                         ))}
                                     </select>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Payment Item Name</label>
-                                    <input
-                                        required
-                                        type="text"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm"
-                                        value={formData.name}
-                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                        placeholder="e.g. Advance 2400"
-                                    />
+                                    <div className="absolute right-3 top-3 pointer-events-none">
+                                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="pt-6 flex justify-end gap-3 mt-4">
+                            <div className="space-y-1.5">
+                                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Payment Item Name</label>
+                                <input
+                                    required
+                                    type="text"
+                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all text-sm"
+                                    value={formData.name}
+                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="pt-4 flex justify-end gap-3">
                                 <button
                                     type="button"
                                     onClick={closeModal}
-                                    className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-full transition-colors border border-gray-200 text-sm"
+                                    className="px-6 py-2 text-gray-500 font-medium hover:bg-gray-50 rounded-lg transition-colors text-sm border border-gray-200"
                                 >
                                     Cancel
                                 </button>
