@@ -198,7 +198,7 @@ const DeliveryNotes: React.FC = () => {
                     height: '297mm',
                     position: 'relative',
                     overflow: 'hidden',
-                    margin: '0 auto',
+                    margin: '0',
                     boxSizing: 'border-box',
                     backgroundColor: 'white'
                 }}
