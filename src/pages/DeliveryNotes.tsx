@@ -195,7 +195,7 @@ const DeliveryNotes: React.FC = () => {
                 className="bg-white text-[11px] font-mono relative flex flex-col shadow-lg mx-auto"
                 style={{
                     width: '210mm',
-                    height: '297mm',
+                    height: '280mm',
                     position: 'relative',
                     overflow: 'hidden',
                     margin: '0 auto',
