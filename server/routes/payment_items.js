@@ -39,7 +39,7 @@ router.post('/', authenticateToken, async (req, res) => {
             CREATE TABLE IF NOT EXISTS payment_items (
                 id SERIAL PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
-                vendor_id INTEGER REFERENCES vendors(id) ON DELETE SET NULL,
+                vendor_id UUID REFERENCES vendors(id) ON DELETE SET NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
@@ -98,7 +98,7 @@ router.post('/import', authenticateToken, upload.single('file'), async (req, res
             CREATE TABLE IF NOT EXISTS payment_items (
                 id SERIAL PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
-                vendor_id INTEGER REFERENCES vendors(id) ON DELETE SET NULL,
+                vendor_id UUID REFERENCES vendors(id) ON DELETE SET NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
