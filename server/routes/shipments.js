@@ -557,8 +557,22 @@ router.delete('/:id', authenticateToken, authorizeRole(['Administrator', 'Cleara
         // 1. Delete related Invoices
         await pool.query('DELETE FROM invoices WHERE shipment_id = $1', [id]);
 
-        // 2. Delete related Delivery Note Jobs (references this shipment)
+        // 2. Delete related Delivery Note Jobs (old schema)
         await pool.query('DELETE FROM delivery_note_jobs WHERE job_no = $1', [id]);
+
+        // 2.1 Delete related Delivery Note Items (new schema - foreign key constraints)
+        // Check for both direct job reference and schedule reference
+        await pool.query(`
+            DELETE FROM delivery_note_items 
+            WHERE job_id = $1 
+               OR schedule_id IN (SELECT id FROM clearance_schedules WHERE job_id = $1)
+        `, [id]);
+
+        // 2.2 Delete Job Payments (if cascade fails or to be explicit)
+        await pool.query('DELETE FROM job_payments WHERE job_id = $1', [id]);
+
+        // 2.3 Delete Shipment Documents (if cascade fails or to be explicit)
+        await pool.query('DELETE FROM shipment_documents WHERE shipment_id = $1', [id]);
 
         // 3. Delete related Delivery Notes
         await pool.query('DELETE FROM delivery_notes WHERE shipment_id = $1', [id]);
