@@ -16,6 +16,7 @@ import clearanceRoutes from './routes/clearance.js';
 import vendorRoutes from './routes/vendors.js';
 import deliveryAgentRoutes from './routes/delivery_agents.js';
 import paymentRoutes from './routes/payments.js';
+import paymentItemsRoutes from './routes/payment_items.js';
 
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -71,6 +72,7 @@ app.use('/api/clearance', clearanceRoutes);
 app.use('/api/vendors', vendorRoutes);
 app.use('/api/delivery-agents', deliveryAgentRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/payment-items', paymentItemsRoutes);
 
 
 // Health check

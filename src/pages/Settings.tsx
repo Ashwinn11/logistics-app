@@ -11,6 +11,7 @@ import ExportersSettings from './settings/ExportersSettings';
 import VehiclesSettings from './settings/VehiclesSettings';
 import DeliveryAgentsSettings from './settings/DeliveryAgentsSettings';
 import VendorsSettings from './settings/VendorsSettings';
+import PaymentItemsSettings from './settings/PaymentItemsSettings';
 
 const Settings: React.FC = () => {
     const [activeTab, setActiveTab] = useState('Consignees');
@@ -39,6 +40,8 @@ const Settings: React.FC = () => {
                 return <DeliveryAgentsSettings />;
             case 'Vendors':
                 return <VendorsSettings />;
+            case 'Payment Items':
+                return <PaymentItemsSettings />;
             // ... Add other cases as needed
             default:
                 return (

@@ -213,4 +213,12 @@ export const paymentsAPI = {
     delete: (id: number | string) => api.delete(`/payments/${id}`),
 };
 
+// Payment Items Settings API
+export const paymentItemsAPI = {
+    getAll: () => api.get('/payment-items'),
+    create: (data: any) => api.post('/payment-items', data),
+    update: (id: number | string, data: any) => api.put(`/payment-items/${id}`, data),
+    delete: (id: number | string) => api.delete(`/payment-items/${id}`),
+};
+
 export default api;
