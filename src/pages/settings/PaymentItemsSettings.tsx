@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Plus, Trash2, Search, X, Edit2 } from 'lucide-react';
+import { CreditCard, Plus, Trash2, Search, X, Edit2, FileUp } from 'lucide-react';
 import { paymentItemsAPI, vendorsAPI } from '../../services/api';
 
 const PaymentItemsSettings: React.FC = () => {
@@ -10,6 +10,7 @@ const PaymentItemsSettings: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [editingId, setEditingId] = useState<string | number | null>(null);
+    const [importing, setImporting] = useState(false);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -104,6 +105,32 @@ const PaymentItemsSettings: React.FC = () => {
         return vendor ? vendor.name : 'Unassigned';
     };
 
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+
+        const file = e.target.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            setImporting(true);
+            const res = await paymentItemsAPI.import(formData);
+            alert(res.data.message || 'Import successful');
+            if (res.data.errors) {
+                console.warn('Import warnings:', res.data.errors);
+                alert(`Import completed with errors:\n${res.data.errors.join('\n')}`);
+            }
+            fetchPaymentItems();
+        } catch (error: any) {
+            console.error('Import failed', error);
+            alert('Import failed: ' + (error.response?.data?.error || error.message));
+        } finally {
+            setImporting(false);
+            // Reset input
+            e.target.value = '';
+        }
+    };
+
     return (
         <div className="flex-1 flex flex-col h-full bg-white">
             <div className="px-8 py-8 flex items-center justify-between">
@@ -123,18 +150,44 @@ const PaymentItemsSettings: React.FC = () => {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
+                    />
                 </div>
-                <button
-                    onClick={() => {
-                        setEditingId(null);
-                        setFormData({ name: '', vendor_id: '' });
-                        setShowModal(true);
-                    }}
-                    className="px-4 py-2 bg-black text-white font-semibold rounded-lg shadow-sm hover:bg-gray-900 transition-colors flex items-center gap-2 text-sm"
-                >
-                    <Plus className="w-4 h-4" />
-                    Add Item
-                </button>
+                <div className="flex gap-3">
+                    <label className={`px-4 py-2 bg-white border border-gray-200 text-gray-700 font-semibold rounded-lg shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm cursor-pointer ${importing ? 'opacity-50 cursor-wait' : ''}`}>
+                        <FileUp className="w-4 h-4" />
+                        {importing ? 'Importing...' : 'Import Excel'}
+                        <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleFileUpload} disabled={importing} />
+                    </label>
+                    <button
+                        onClick={async () => {
+                            if (window.confirm('Are you sure you want to DELETE ALL payment items? This action cannot be undone.')) {
+                                try {
+                                    await paymentItemsAPI.deleteAll();
+                                    fetchPaymentItems();
+                                    alert('All payment items deleted successfully');
+                                } catch (error) {
+                                    console.error('Failed to delete all', error);
+                                    alert('Failed to delete all items');
+                                }
+                            }
+                        }}
+                        className="px-4 py-2 bg-red-50 text-red-600 font-semibold rounded-lg shadow-sm hover:bg-red-100 transition-colors flex items-center gap-2 text-sm"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                        Delete All
+                    </button>
+                    <button
+                        onClick={() => {
+                            setEditingId(null);
+                            setFormData({ name: '', vendor_id: '' });
+                            setShowModal(true);
+                        }}
+                        className="px-4 py-2 bg-[#FCD34D] text-black font-semibold rounded-lg shadow-sm hover:bg-[#FBBF24] transition-colors flex items-center gap-2 text-sm"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Add Manually
+                    </button>
+                </div>
             </div>
 
             <div className="flex-1 overflow-y-auto px-8 pb-8 custom-scrollbar">

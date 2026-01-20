@@ -219,6 +219,10 @@ export const paymentItemsAPI = {
     create: (data: any) => api.post('/payment-items', data),
     update: (id: number | string, data: any) => api.put(`/payment-items/${id}`, data),
     delete: (id: number | string) => api.delete(`/payment-items/${id}`),
+    deleteAll: () => api.delete('/payment-items/delete-all'),
+    import: (formData: FormData) => api.post('/payment-items/import', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    }),
 };
 
 export default api;

@@ -2,9 +2,13 @@
 import express from 'express';
 import pool from '../config/database.js';
 import { authenticateToken } from '../middleware/auth.js';
+import multer from 'multer';
+import XLSX from 'xlsx';
+import fs from 'fs';
 import { logActivity } from '../utils/logger.js';
 
 const router = express.Router();
+const upload = multer({ dest: 'uploads/' });
 
 // Get all payment items
 router.get('/', authenticateToken, async (req, res) => {
@@ -78,6 +82,88 @@ router.put('/:id', authenticateToken, async (req, res) => {
         res.json(result.rows[0]);
     } catch (error) {
         console.error('Error updating payment item:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Import from Excel/CSV
+router.post('/import', authenticateToken, upload.single('file'), async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    try {
+        // Ensure table exists
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS payment_items (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                vendor_id INTEGER REFERENCES vendors(id) ON DELETE SET NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        const workbook = XLSX.readFile(req.file.path);
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const data = XLSX.utils.sheet_to_json(sheet);
+
+        let successCount = 0;
+        let errors = [];
+
+        for (const row of data) {
+            const normalizedRow = {};
+            Object.keys(row).forEach(key => {
+                normalizedRow[key.toLowerCase().trim()] = row[key];
+            });
+
+            const name = normalizedRow['name'] || normalizedRow['payment item'] || normalizedRow['item'];
+            if (!name) continue;
+
+            const vendorName = normalizedRow['vendor'] || normalizedRow['vendor name'];
+            let vendorId = null;
+
+            if (vendorName) {
+                // Try to find vendor by name
+                const vendorRes = await pool.query('SELECT id FROM vendors WHERE LOWER(name) = LOWER($1)', [vendorName]);
+                if (vendorRes.rows.length > 0) {
+                    vendorId = vendorRes.rows[0].id;
+                }
+            }
+
+            try {
+                await pool.query(
+                    'INSERT INTO payment_items (name, vendor_id) VALUES ($1, $2)',
+                    [name, vendorId]
+                );
+                successCount++;
+            } catch (err) {
+                errors.push(`Failed to import ${name}: ${err.message}`);
+            }
+        }
+
+        fs.unlinkSync(req.file.path);
+        await logActivity(req.user.id, 'IMPORT_PAYMENT_ITEMS', `Imported ${successCount} payment items`, 'PAYMENT_ITEM', 'BATCH');
+
+        res.json({
+            message: `Imported ${successCount} payment items`,
+            errors: errors.length > 0 ? errors : undefined
+        });
+
+    } catch (error) {
+        console.error('Import error:', error);
+        res.status(500).json({ error: 'Failed to process file: ' + error.message });
+    }
+});
+
+// Delete all payment items
+router.delete('/delete-all', authenticateToken, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM payment_items');
+        await logActivity(req.user.id, 'DELETE_ALL_PAYMENT_ITEMS', 'Deleted all payment items', 'PAYMENT_ITEM', 'ALL');
+        res.json({ message: 'All payment items deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting all payment items:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
