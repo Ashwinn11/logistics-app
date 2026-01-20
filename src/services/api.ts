@@ -128,6 +128,7 @@ export const deliveryNotesAPI = {
     create: (data: any) => api.post('/delivery-notes', data),
     update: (id: string, data: any) => api.put(`/delivery-notes/${id}`, data),
     updateStatus: (id: string, status: string) => api.put(`/delivery-notes/${id}/status`, { status }),
+    delete: (id: string) => api.delete(`/delivery-notes/${id}`),
 };
 
 // Invoices API

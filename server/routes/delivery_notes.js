@@ -196,4 +196,21 @@ router.put('/:id/status', authenticateToken, async (req, res) => {
     }
 });
 
+// Delete Delivery Note
+router.delete('/:id', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query('DELETE FROM delivery_notes WHERE id = $1 RETURNING *', [id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Delivery Note not found' });
+        }
+
+        res.json({ message: 'Delivery Note deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting delivery note:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 export default router;

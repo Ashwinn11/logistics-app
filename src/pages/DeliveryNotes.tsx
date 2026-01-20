@@ -3,7 +3,7 @@ import Layout from '../components/Layout';
 import {
     Search, Printer, ChevronDown,
     X, Download, Upload,
-    Mail, Phone, Globe, MapPin
+    Mail, Phone, Globe, MapPin, Trash2
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -165,6 +165,21 @@ const DeliveryNotes: React.FC = () => {
         } catch (error) {
             console.error('PDF Generation Failed', error);
             alert(`Failed to generate PDF: ${error instanceof Error ? error.message : String(error)}. Please try printing to PDF instead.`);
+        }
+    };
+
+    const handleDeleteNote = async (id: string) => {
+        if (window.confirm('Are you sure you want to delete this delivery note? The associated jobs will be returned to the clearance schedule.')) {
+            try {
+                await deliveryNotesAPI.delete(id);
+                setDeliveryNotes(prev => prev.filter(n => n.id !== id));
+                if (selectedNote?.id === id) {
+                    setSelectedNote(null);
+                }
+            } catch (error) {
+                console.error('Failed to delete delivery note', error);
+                alert('Failed to delete delivery note');
+            }
         }
     };
 
@@ -605,6 +620,13 @@ const DeliveryNotes: React.FC = () => {
                                                 <div className="flex items-center justify-end gap-2 text-gray-400">
                                                     <button className="p-1 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors" onClick={(e) => { e.stopPropagation(); setSelectedNote(note); setActiveTab('document'); }}>
                                                         <Printer className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        className="p-1 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                                        onClick={(e) => { e.stopPropagation(); handleDeleteNote(note.id); }}
+                                                        title="Delete"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
                                                     </button>
                                                 </div>
                                             </td>
