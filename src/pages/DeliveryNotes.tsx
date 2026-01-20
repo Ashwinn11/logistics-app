@@ -744,19 +744,19 @@ const DeliveryNotes: React.FC = () => {
                     position: absolute;
                     left: 0;
                     top: 0;
-                    width: 210mm !important;
-                    height: 297mm !important;
+                    width: 210mm;
+                    height: 297mm;
                     margin: 0;
-                    padding: 0 !important;
+                    padding: 0;
                     background: white;
-                    border: none !important;
-                    box-shadow: none !important;
-                    overflow: hidden !important;
+                    border: none;
+                    box-shadow: none;
+                    overflow: hidden;
                     z-index: 9999;
                 }
                 /* Hide buttons/UI during print */
                 button, .no-print {
-                    display: none !important;
+                    display: none;
                 }
             }
 
