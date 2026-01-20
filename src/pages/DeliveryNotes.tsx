@@ -195,7 +195,7 @@ const DeliveryNotes: React.FC = () => {
                 className="bg-white text-[11px] font-mono relative flex flex-col shadow-lg mx-auto"
                 style={{
                     width: '210mm',
-                    height: '280mm',
+                    height: '297mm', // Enforce full A4 height to prevent browser vertical centering/margins
                     position: 'relative',
                     overflow: 'hidden',
                     margin: '0 auto',
@@ -215,7 +215,7 @@ const DeliveryNotes: React.FC = () => {
                 </div>
 
                 {/* CONTENT LAYER */}
-                <div className="relative z-10 w-full h-full flex flex-col pt-[60mm] pb-[30mm]">
+                <div className="relative z-10 w-full h-full flex flex-col pt-[45mm] pb-[35mm]">
 
                     {/* 2. FIXED TOP CONTENT (Red Boxes: Logo/Title + Customer Details) */}
                     <div className="px-12 flex-shrink-0">
