@@ -731,7 +731,11 @@ const DeliveryNotes: React.FC = () => {
                     size: A4 portrait;
                     margin: 0;
                 }
-                html, body {margin: 0;padding: 0;}
+                body {
+                    margin: 0;
+                    padding: 0;
+                    -webkit-print-color-adjust: exact;
+                }
                 /* Hide everything by default */
                 body * {
                     visibility: hidden;
