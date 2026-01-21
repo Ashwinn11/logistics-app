@@ -24,7 +24,8 @@ router.get('/', authenticateToken, async (req, res) => {
                 dn.status as delivery_note_status
             FROM shipments s
             LEFT JOIN clearance_schedules cs ON s.id = cs.job_id
-            LEFT JOIN delivery_notes dn ON s.id = dn.shipment_id
+            LEFT JOIN delivery_note_items dni ON s.id = dni.job_id
+            LEFT JOIN delivery_notes dn ON dni.delivery_note_id = dn.id
             WHERE s.container_no IS NOT NULL AND s.container_no != ''
         `;
 
