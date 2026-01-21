@@ -196,8 +196,8 @@ const DeliveryNotes: React.FC = () => {
                 style={{
                     width: '210mm',
                     height: '297mm', // Enforce full A4 height to prevent browser vertical centering/margins
-                    position: 'absolute',
-                    overflow: 'y-auto',
+                    position: 'relative',
+                    overflow: 'auto',
                     margin: '0 auto',
                     boxSizing: 'border-box',
                     backgroundColor: 'white'
@@ -726,7 +726,7 @@ const DeliveryNotes: React.FC = () => {
                             </div>
 
                             {/* Content */}
-                            <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50 custom-scrollbar">
+                            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-gray-50/50">
                                 {activeTab === 'document' ? renderDocument() : renderManage()}
                             </div>
                         </div>
