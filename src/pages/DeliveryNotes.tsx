@@ -738,10 +738,11 @@ const DeliveryNotes: React.FC = () => {
             @media print {
                 @page {
                     size: A4 portrait;
-
+                    margin: 0;
                 }
                 body {
-
+                    margin: 0;
+                    padding: 0;
                     -webkit-print-color-adjust: exact;
                 }
                 /* Hide everything by default */
@@ -752,9 +753,9 @@ const DeliveryNotes: React.FC = () => {
                 #printable-content, #printable-content * {
                     visibility: visible;
                 }
-                /* Position the content to fill the page */
+                /* Position the content to fill the page, ignoring parent padding */
                 #printable-content {
-                    position: relative;
+                    position: fixed;
                     left: 0;
                     top: 0;
                     width: 210mm;
@@ -765,6 +766,7 @@ const DeliveryNotes: React.FC = () => {
                     border: none;
                     box-shadow: none;
                     overflow: hidden;
+                    z-index: 9999;
                 }
                 /* Hide buttons/UI during print */
                 button, .no-print {
