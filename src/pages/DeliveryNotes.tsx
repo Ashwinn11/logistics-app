@@ -738,16 +738,10 @@ const DeliveryNotes: React.FC = () => {
             @media print {
                 @page {
                     size: A4 portrait;
-                    margin: auto;
-                    margin-top: 0;
-                    margin-bottom: 0;
-                    margin-left: 0;
-                    margin-right: 0;
-                    padding: 0;
+
                 }
                 body {
-                    margin: 0;
-                    padding: 0;
+
                     -webkit-print-color-adjust: exact;
                 }
                 /* Hide everything by default */
@@ -763,19 +757,18 @@ const DeliveryNotes: React.FC = () => {
                     position: relative;
                     left: 0;
                     top: 0;
-                    width: 210mm !important;
-                    height: 297mm !important;
+                    width: 210mm;
+                    height: 297mm;
                     margin: 0;
-                    padding: 0 !important;
+                    padding: 0;
                     background: white;
-                    border: none !important;
-                    box-shadow: none !important;
-                    overflow: hidden !important;
-                    z-index: 9999;
+                    border: none;
+                    box-shadow: none;
+                    overflow: hidden;
                 }
                 /* Hide buttons/UI during print */
                 button, .no-print {
-                    display: none !important;
+                    display: none;
                 }
             }
 
