@@ -550,28 +550,30 @@ const ShipmentRegistry: React.FC = () => {
 
 
 
-    const initializePackages = (job: any) => {
-        if (job.packages && Array.isArray(job.packages) && job.packages.length > 0) {
-            return job.packages;
-        }
-        // Fallback or init from flat fields if they exist
-        if (job.no_of_pkgs || job.weight || job.package_type) {
-            return [{
-                count: job.no_of_pkgs,
-                weight: job.weight,
-                type: job.package_type || ''
-            }];
-        }
-        return [{ count: '', weight: '', type: '' }];
-    };
+    // initializePackages removed as it was unused
 
     const handleOpenPopup = (type: any, job: any) => {
+        if (type === 'bl') {
+            // Use the new BL Drawer
+            if (job.bls && job.bls.length > 0) {
+                setNewBL(job.bls[0]); // Open the first BL for editing
+            } else {
+                setNewBL({ master_bl: '', house_bl: '', loading_port: '', vessel: '', etd: '', eta: '', delivery_agent: '' });
+            }
+            setIsBLDrawerOpen(true);
+            return;
+        }
+
+        if (type === 'invoice') {
+            // Use the new Invoice Drawer
+            setIsInvoiceDrawerOpen(true);
+            return;
+        }
+
         setPopupJob(job);
         setPopupType(type);
         const initialData = { ...job };
-        if (type === 'bl') {
-            initialData.packages = initializePackages(job);
-        }
+
         if (type === 'schedule') {
             initialData.date = new Date().toISOString().split('T')[0];
             initialData.type = '';
