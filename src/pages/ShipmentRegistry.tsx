@@ -1199,17 +1199,35 @@ const ShipmentRegistry: React.FC = () => {
                         )}
                     </div>
 
-                    {/* Progress Bar (Mockup) */}
+                    {/* Progress Bar */}
                     <div className="mb-8">
-                        <div className="flex justify-between text-xs font-semibold text-gray-500 mb-2 px-1">
-                            <span className="text-indigo-600">Document</span>
-                            <span className="text-indigo-600">Clearance</span>
-                            <span className="">Accounts</span>
-                            <span className="">Completed</span>
-                        </div>
-                        <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
-                            <div className="h-full bg-indigo-600 w-1/2"></div>
-                        </div>
+                        {(() => {
+                            // Progress Logic
+                            const isDocComplete = selectedJob.documents && selectedJob.documents.length > 0;
+                            const isClearanceComplete = isDocComplete && selectedJob.clearance_schedule?.clearance_date && selectedJob.delivery_note?.id;
+                            const isAccountsComplete = isClearanceComplete && (selectedJob.payment_status === 'Paid' || selectedJob.payment_status === 'Approved');
+                            const isJobCompleted = isAccountsComplete && selectedJob.status === 'Completed';
+
+                            let progressWidth = '5%';
+                            if (isDocComplete) progressWidth = '25%';
+                            if (isClearanceComplete) progressWidth = '50%';
+                            if (isAccountsComplete) progressWidth = '75%';
+                            if (isJobCompleted) progressWidth = '100%';
+
+                            return (
+                                <>
+                                    <div className="flex justify-between text-xs font-semibold text-gray-500 mb-2 px-1">
+                                        <span className={isDocComplete ? "text-indigo-600" : ""}>Document</span>
+                                        <span className={isClearanceComplete ? "text-indigo-600" : ""}>Clearance</span>
+                                        <span className={isAccountsComplete ? "text-indigo-600" : ""}>Accounts</span>
+                                        <span className={isJobCompleted ? "text-indigo-600" : ""}>Completed</span>
+                                    </div>
+                                    <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                                        <div className="h-full bg-indigo-600 transition-all duration-500 ease-in-out" style={{ width: progressWidth }}></div>
+                                    </div>
+                                </>
+                            );
+                        })()}
                     </div>
 
                     {activeTab === 'Details' && (<>

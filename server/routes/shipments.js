@@ -299,6 +299,8 @@ router.get('/:id', authenticateToken, async (req, res) => {
         const containersResult = await pool.query('SELECT * FROM shipment_containers WHERE shipment_id = $1 ORDER BY created_at ASC', [id]);
         const blsResult = await pool.query('SELECT * FROM shipment_bls WHERE shipment_id = $1 ORDER BY created_at ASC', [id]);
 
+        const deliveryNoteResult = await pool.query('SELECT * FROM delivery_notes WHERE shipment_id = $1', [id]);
+
         res.json({
             ...shipmentResult.rows[0],
             documents: documentsResult.rows,
@@ -306,6 +308,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
             payment_status: invoiceResult.rows[0]?.status || 'Pending',
             invoice_id: invoiceResult.rows[0]?.id || null,
             clearance_schedule: clearanceResult.rows[0] || null,
+            delivery_note: deliveryNoteResult.rows[0] || null,
             containers: containersResult.rows,
             bls: blsResult.rows
         });
