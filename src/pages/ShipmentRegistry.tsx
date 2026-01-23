@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
-import { shipmentsAPI, consigneesAPI, exportersAPI, clearanceAPI, deliveryAgentsAPI, vendorsAPI, paymentsAPI } from '../services/api';
+import { shipmentsAPI, consigneesAPI, exportersAPI, clearanceAPI, deliveryAgentsAPI, vendorsAPI, paymentsAPI, paymentItemsAPI } from '../services/api';
 import {
     Search, Plus,
     FileText,
@@ -240,6 +240,7 @@ const ShipmentRegistry: React.FC = () => {
     const [exportersList, setExportersList] = useState<any[]>([]);
     const [deliveryAgentsList, setDeliveryAgentsList] = useState<any[]>([]);
     const [vendorsList, setVendorsList] = useState<any[]>([]);
+    const [paymentTypesList, setPaymentTypesList] = useState<any[]>([]);
 
     // Form State (for Register New Job)
     const [isEditingJob, setIsEditingJob] = useState(false);
@@ -305,7 +306,12 @@ const ShipmentRegistry: React.FC = () => {
             setConsigneesList(consigneesRes.data || []);
             setExportersList(exportersRes.data || []);
             setDeliveryAgentsList(deliveryAgentsRes.data || []);
+
             setVendorsList(vendorsRes.data || []);
+
+            // Load Payment Types
+            const paymentItemsRes = await paymentItemsAPI.getAll();
+            setPaymentTypesList(paymentItemsRes.data || []);
         } catch (error) {
             console.error("Failed to load dropdown data", error);
         }
@@ -1905,12 +1911,13 @@ const ShipmentRegistry: React.FC = () => {
                             <div className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 mb-2">Payment Type *</label>
-                                    <select name="payment_type" value={editFormData.payment_type || ''} onChange={handleEditChange} className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
-                                        <option value="">Select Type</option>
-                                        <option value="MCS Processing">MCS Processing</option>
-                                        <option value="MCS Import Duty">MCS Import Duty</option>
-                                        <option value="Other">Other</option>
-                                    </select>
+                                    <SearchableSelect
+                                        options={paymentTypesList.map((p: any) => ({ id: p.id, label: p.name, value: p.name }))}
+                                        value={editFormData.payment_type || ''}
+                                        onChange={(val) => setEditFormData((prev: any) => ({ ...prev, payment_type: val }))}
+                                        placeholder="Select Payment Type"
+                                        required
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 mb-2">Vendor *</label>
