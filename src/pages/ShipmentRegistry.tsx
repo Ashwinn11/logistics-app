@@ -8,7 +8,7 @@ import {
     FileText,
     Pencil, Check,
     Anchor, Plane, Truck, Package, X, Download, Trash2,
-    CreditCard, UploadCloud, FileSpreadsheet, Receipt, Calendar
+    CreditCard, UploadCloud, FileSpreadsheet, Receipt, Calendar, MoreHorizontal
 
 
 } from 'lucide-react';
@@ -108,6 +108,27 @@ const ShipmentRegistry: React.FC = () => {
             setJobs(prev => prev.map(j => j.id === selectedJob.id ? updatedJob : j));
         } catch (e) {
             console.error(e); // alert('Failed to delete');
+        }
+    };
+
+    const handleDeleteBLItem = async (blId: string) => {
+        if (!window.confirm('Are you sure you want to delete this BL?')) return;
+        try {
+            await shipmentsAPI.deleteBL(selectedJob.id, blId);
+            // Refresh logic - either filter local or refetch
+            try {
+                const refreshed = await shipmentsAPI.getById(selectedJob.id);
+                setSelectedJob(refreshed.data);
+                setJobs(prev => prev.map(j => j.id === selectedJob.id ? { ...j, ...refreshed.data } : j));
+            } catch (err) {
+                // Fallback
+                const updatedBLs = selectedJob.bls.filter((b: any) => b.id !== blId);
+                const updatedJob = { ...selectedJob, bls: updatedBLs };
+                setSelectedJob(updatedJob);
+                setJobs(prev => prev.map(j => j.id === selectedJob.id ? updatedJob : j));
+            }
+        } catch (e) {
+            console.error(e);
         }
     };
 
@@ -1323,6 +1344,114 @@ const ShipmentRegistry: React.FC = () => {
 
 
 
+
+
+                        {/* BL/AWB Details Card */}
+                        <div className="bg-white rounded-xl shadow-sm p-8 mb-6 border border-gray-100 transition-all">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="font-bold text-gray-900 flex items-center gap-3 text-lg">
+                                    <FileText className="w-5 h-5 text-gray-400" />
+                                    BL/AWB Details
+                                </h3>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => {
+                                            setNewBL({ master_bl: '', house_bl: '', loading_port: '', vessel: '', etd: '', eta: '', delivery_agent: '' });
+                                            setIsBLDrawerOpen(true);
+                                        }}
+                                        className="text-indigo-600 hover:bg-indigo-50 p-2 rounded-full transition-colors flex items-center gap-2 text-sm font-bold"
+                                        title="Add BL"
+                                    >
+                                        <Plus className="w-4 h-4" /> Add
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-6">
+                                {selectedJob.bls && selectedJob.bls.length > 0 ? (
+                                    selectedJob.bls.map((bl: any) => (
+                                        <div key={bl.id} className="border border-gray-200 rounded-lg p-5 hover:border-indigo-100 transition-colors relative group">
+                                            {/* Options Menu (Top Right) */}
+                                            <div className="absolute top-4 right-4 flex gap-2">
+                                                <div className="relative group/menu">
+                                                    <button className="text-gray-400 hover:text-indigo-600 p-1">
+                                                        <MoreHorizontal className="w-5 h-5" />
+                                                    </button>
+                                                    <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-100 shadow-lg rounded-md hidden group-hover/menu:block z-10 p-1">
+                                                        <button
+                                                            onClick={() => {
+                                                                setNewBL(bl);
+                                                                setIsBLDrawerOpen(true);
+                                                            }}
+                                                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded"
+                                                        >
+                                                            Edit / View
+                                                        </button>
+                                                        <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded">
+                                                            Continue Process
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteBLItem(bl.id)}
+                                                            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded"
+                                                        >
+                                                            Delete
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                                <div>
+                                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Master No.</p>
+                                                    <p className="font-semibold text-gray-900">{bl.master_bl || '-'}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">House No.</p>
+                                                    <p className="font-semibold text-gray-900">{bl.house_bl || '-'}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">ETD</p>
+                                                    <p className="font-semibold text-gray-900">{bl.etd ? new Date(bl.etd).toLocaleDateString() : '-'}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">ETA</p>
+                                                    <p className="font-semibold text-gray-900">{bl.eta ? new Date(bl.eta).toLocaleDateString() : '-'}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Loading Port</p>
+                                                    <p className="font-semibold text-gray-900">{bl.loading_port || '-'}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Vessel</p>
+                                                    <p className="font-semibold text-gray-900">{bl.vessel || '-'}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Delivery Agent</p>
+                                                    <p className="font-semibold text-gray-900">{bl.delivery_agent || '-'}</p>
+                                                </div>
+
+                                                {/* Packages Fields in BL Card */}
+                                                <div>
+                                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Packages</p>
+                                                    <p className="font-semibold text-gray-900">
+                                                        {selectedJob.packages?.reduce((acc: number, p: any) => acc + (parseInt(p.count) || 0), 0) || '0'}
+                                                        Next
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Package Type</p>
+                                                    <p className="font-semibold text-gray-900 uppercase">
+                                                        {selectedJob.packages?.map((p: any) => p.type).filter((v: any, i: any, a: any) => a.indexOf(v) === i).join(', ') || '-'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-6 text-gray-400 italic">No BL/AWB details listed</div>
+                                )}
+                            </div>
+                        </div>
 
                         {selectedJob.transport_mode === 'SEA' && (
 
