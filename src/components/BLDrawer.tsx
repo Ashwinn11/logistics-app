@@ -32,25 +32,26 @@ const BLDrawer: React.FC<BLDrawerProps> = ({ isOpen, onClose, onSave, initialDat
     });
 
     useEffect(() => {
+        const defaultState = {
+            master_bl: '',
+            house_bl: '',
+            loading_port: '',
+            vessel: '',
+            etd: '',
+            eta: '',
+            delivery_agent: '',
+            containers: [],
+            packages: []
+        };
+
         if (isOpen) {
             if (initialData) {
                 setFormData({
+                    ...defaultState,
                     ...initialData,
-                    // If we were editing, we might need to load linked containers/packages differently 
-                    // dependent on how backend returns them. For now assume standard structure.
                 });
             } else {
-                setFormData({
-                    master_bl: '',
-                    house_bl: '',
-                    loading_port: '',
-                    vessel: '',
-                    etd: '',
-                    eta: '',
-                    delivery_agent: '',
-                    containers: [],
-                    packages: []
-                });
+                setFormData(defaultState);
             }
             // Reset temp line item
             setNewPackage({

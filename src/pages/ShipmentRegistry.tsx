@@ -72,6 +72,7 @@ const ShipmentRegistry: React.FC = () => {
 
 
     const [newBL, setNewBL] = useState<any>({ master_bl: '', house_bl: '', loading_port: '', vessel: '', etd: '', eta: '', delivery_agent: '' });
+    const [activeMenuBL, setActiveMenuBL] = useState<string | null>(null);
 
     const handleSaveNewContainer = async () => {
         if (!newContainer.container_no) return alert('Container number is required');
@@ -1373,30 +1374,46 @@ const ShipmentRegistry: React.FC = () => {
                                         <div key={bl.id} className="border border-gray-200 rounded-lg p-5 hover:border-indigo-100 transition-colors relative group">
                                             {/* Options Menu (Top Right) */}
                                             <div className="absolute top-4 right-4 flex gap-2">
-                                                <div className="relative group/menu">
-                                                    <button className="text-gray-400 hover:text-indigo-600 p-1">
+                                                <div className="relative">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setActiveMenuBL(activeMenuBL === bl.id ? null : bl.id);
+                                                        }}
+                                                        className="text-gray-400 hover:text-indigo-600 p-1 rounded-full hover:bg-gray-100"
+                                                    >
                                                         <MoreHorizontal className="w-5 h-5" />
                                                     </button>
-                                                    <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-100 shadow-lg rounded-md hidden group-hover/menu:block z-10 p-1">
-                                                        <button
-                                                            onClick={() => {
-                                                                setNewBL(bl);
-                                                                setIsBLDrawerOpen(true);
-                                                            }}
-                                                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded"
-                                                        >
-                                                            Edit / View
-                                                        </button>
-                                                        <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded">
-                                                            Continue Process
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteBLItem(bl.id)}
-                                                            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded"
-                                                        >
-                                                            Delete
-                                                        </button>
-                                                    </div>
+
+                                                    {activeMenuBL === bl.id && (
+                                                        <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-100 shadow-lg rounded-md z-10 p-1 animate-fadeIn">
+                                                            <button
+                                                                onClick={() => {
+                                                                    setNewBL(bl);
+                                                                    setIsBLDrawerOpen(true);
+                                                                    setActiveMenuBL(null);
+                                                                }}
+                                                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded"
+                                                            >
+                                                                Edit / View
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setActiveMenuBL(null)}
+                                                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded"
+                                                            >
+                                                                Continue Process
+                                                            </button>
+                                                            <button
+                                                                onClick={() => {
+                                                                    handleDeleteBLItem(bl.id);
+                                                                    setActiveMenuBL(null);
+                                                                }}
+                                                                className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded"
+                                                            >
+                                                                Delete
+                                                            </button>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
 
