@@ -193,17 +193,17 @@ const ShipmentRegistry: React.FC = () => {
 
             let updatedJobPackages = selectedJob.packages || [];
 
-            if (data.packages) {
-                const newPackages = data.packages.map((i: any) => ({
-                    count: i.pkg_count,
-                    type: i.pkg_type,
-                    weight: i.weight || 0
-                }));
+            // if (data.packages) {
+            //     const newPackages = data.packages.map((i: any) => ({
+            //         count: i.pkg_count,
+            //         type: i.pkg_type,
+            //         weight: i.weight || 0
+            //     }));
 
-                updatedJobPackages = newPackages; // Replace existing packages to prevent duplication
-                // Update Job with new packages
-                await shipmentsAPI.update(selectedJob.id, { packages: updatedJobPackages });
-            }
+            //     updatedJobPackages = newPackages; // Replace existing packages to prevent duplication
+            //     // Update Job with new packages
+            //     await shipmentsAPI.update(selectedJob.id, { packages: updatedJobPackages });
+            // }
 
             // 3. Refresh Details from Server to ensure consistency
             try {
