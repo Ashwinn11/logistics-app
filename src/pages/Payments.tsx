@@ -116,59 +116,101 @@ const Payments = () => {
                     <table className="w-full text-left">
                         <thead>
                             <tr className="text-xs font-semibold text-gray-500 border-b border-gray-100">
-                                <th className="pb-3 px-2 w-[10%]">Job</th>
-                                <th className="pb-3 px-2 w-[30%]">Pay to</th>
-                                <th className="pb-3 px-2 w-[20%]">Requested By</th>
-                                <th className="pb-3 px-2 w-[15%] text-right">Amount (MVR)</th>
-                                {activeTab === 'pending' && <th className="pb-3 px-2 w-[10%]">Action</th>}
+                                {activeTab === 'pending' ? (
+                                    <>
+                                        <th className="pb-3 px-2 w-[10%]">Job</th>
+                                        <th className="pb-3 px-2 w-[30%]">Pay to</th>
+                                        <th className="pb-3 px-2 w-[20%]">Requested By</th>
+                                        <th className="pb-3 px-2 w-[15%] text-right">Amount (MVR)</th>
+                                        <th className="pb-3 px-2 w-[10%]">Action</th>
+                                    </>
+                                ) : (
+                                    // Payments Tab Headers
+                                    <>
+                                        <th className="pb-3 px-2">Voucher#</th>
+                                        <th className="pb-3 px-2">Vendor</th>
+                                        <th className="pb-3 px-2">Payment Reference</th>
+                                        <th className="pb-3 px-2">Payment Date</th>
+                                        <th className="pb-3 px-2">Paid By</th>
+                                        <th className="pb-3 px-2 text-right">Total Amount</th>
+                                        <th className="pb-3 px-2 w-[5%]"></th>
+                                    </>
+                                )}
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
                             {loading ? (
                                 <tr>
-                                    <td colSpan={5} className="py-20 text-center text-gray-500">Loading...</td>
+                                    <td colSpan={7} className="py-20 text-center text-gray-500">Loading...</td>
                                 </tr>
                             ) : payments.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="py-20 text-center text-gray-500">No requests found.</td>
+                                    <td colSpan={7} className="py-20 text-center text-gray-500">No records found.</td>
                                 </tr>
                             ) : (
                                 payments.map((item, index) => (
                                     <tr key={index} className="group hover:bg-gray-50 transition-colors">
-                                        {/* Job */}
-                                        <td className="py-4 px-2 align-top">
-                                            <span className="text-sm text-gray-600">{item.job_id}</span>
-                                        </td>
-                                        {/* Pay To */}
-                                        <td className="py-4 px-2 align-top">
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-bold text-gray-900">{item.payment_type}</span>
-                                                <span className="text-xs text-gray-500 uppercase">{item.vendor}</span>
-                                            </div>
-                                        </td>
-                                        {/* Requested By */}
-                                        <td className="py-4 px-2 align-top">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-[10px] text-white font-bold">
-                                                    {item.requested_by_name?.charAt(0).toUpperCase()}
-                                                </div>
-                                                <span className="text-sm text-gray-600">{item.requested_by_name}</span>
-                                            </div>
-                                        </td>
-                                        {/* Amount */}
-                                        <td className="py-4 px-2 align-top text-right">
-                                            <span className="text-sm font-bold text-gray-900">{formatCurrency(item.amount)}</span>
-                                        </td>
-                                        {/* Action */}
-                                        {activeTab === 'pending' && (
-                                            <td className="py-4 px-2 align-top">
-                                                <button
-                                                    onClick={() => handleApprove(item.id)}
-                                                    className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
-                                                >
-                                                    Approve
-                                                </button>
-                                            </td>
+                                        {activeTab === 'pending' ? (
+                                            <>
+                                                {/* Pending Row */}
+                                                <td className="py-4 px-2 align-top">
+                                                    <span className="text-sm text-gray-600">{item.job_id}</span>
+                                                </td>
+                                                <td className="py-4 px-2 align-top">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-bold text-gray-900">{item.payment_type}</span>
+                                                        <span className="text-xs text-gray-500 uppercase">{item.vendor}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="py-4 px-2 align-top">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-[10px] text-white font-bold">
+                                                            {item.requested_by_name?.charAt(0).toUpperCase()}
+                                                        </div>
+                                                        <span className="text-sm text-gray-600">{item.requested_by_name}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="py-4 px-2 align-top text-right">
+                                                    <span className="text-sm font-bold text-gray-900">{formatCurrency(item.amount)}</span>
+                                                </td>
+                                                <td className="py-4 px-2 align-top">
+                                                    <button
+                                                        onClick={() => handleApprove(item.id)}
+                                                        className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
+                                                    >
+                                                        Approve
+                                                    </button>
+                                                </td>
+                                            </>
+                                        ) : (
+                                            <>
+                                                {/* Payments Row */}
+                                                <td className="py-4 px-2 align-top">
+                                                    <span className="text-sm font-bold text-blue-900">VC.{new Date(item.created_at).getFullYear()}.{String(item.id).padStart(4, '0')}</span>
+                                                </td>
+                                                <td className="py-4 px-2 align-top">
+                                                    <span className="text-sm text-gray-900">{item.vendor}</span>
+                                                </td>
+                                                <td className="py-4 px-2 align-top">
+                                                    <span className="text-sm text-gray-600">{item.bill_ref_no || '-'}</span>
+                                                </td>
+                                                <td className="py-4 px-2 align-top">
+                                                    <span className="text-sm text-gray-600">
+                                                        {new Date(item.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                                    </span>
+                                                </td>
+                                                <td className="py-4 px-2 align-top">
+                                                    <span className="text-sm text-gray-600">{item.paid_by || 'Admin'}</span>
+                                                </td>
+                                                <td className="py-4 px-2 align-top text-right">
+                                                    <span className="text-sm font-bold text-gray-900">{formatCurrency(item.amount)}</span>
+                                                </td>
+                                                <td className="py-4 px-2 align-top text-right">
+                                                    <button className="text-gray-400 hover:text-gray-600">
+                                                        <span className="text-lg leading-none">...</span>
+                                                    </button>
+                                                </td>
+                                            </>
                                         )}
                                     </tr>
                                 ))
