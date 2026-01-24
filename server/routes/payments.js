@@ -7,7 +7,7 @@ const router = express.Router();
 // Get all payments (with search/pagination)
 router.get('/', authenticateToken, async (req, res) => {
     try {
-        const { search, page = 1, limit = 50 } = req.query;
+        const { search, status, page = 1, limit = 50 } = req.query;
         const offset = (page - 1) * limit;
 
         let query = `
@@ -18,6 +18,11 @@ router.get('/', authenticateToken, async (req, res) => {
             WHERE 1=1
         `;
         const params = [];
+
+        if (status) {
+            query += ` AND jp.status = $${params.length + 1}`;
+            params.push(status);
+        }
 
         if (search) {
             query += ` AND (
@@ -43,6 +48,12 @@ router.get('/', authenticateToken, async (req, res) => {
             WHERE 1=1
         `;
         const countParams = [];
+
+        if (status) {
+            countQuery += ` AND jp.status = $${countParams.length + 1}`;
+            countParams.push(status);
+        }
+
         if (search) {
             countQuery += ` AND (
                 jp.job_id ILIKE $${countParams.length + 1} OR
@@ -66,6 +77,38 @@ router.get('/', authenticateToken, async (req, res) => {
         });
     } catch (error) {
         console.error('Get all payments error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Update payment status
+router.put('/:id/status', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        if (!status) {
+            return res.status(400).json({ error: 'Status is required' });
+        }
+
+        const result = await pool.query(
+            'UPDATE job_payments SET status = $1 WHERE id = $2 RETURNING *',
+            [status, id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Payment not found' });
+        }
+
+        // Audit Log
+        await pool.query(
+            'INSERT INTO audit_logs (user_id, action, details, entity_type, entity_id) VALUES ($1, $2, $3, $4, $5)',
+            [req.user.id, 'UPDATE_PAYMENT_STATUS', `Updated payment status to ${status}`, 'PAYMENT', id]
+        );
+
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Update payment status error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
