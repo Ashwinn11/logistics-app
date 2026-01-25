@@ -23,7 +23,7 @@ router.get('/', authenticateToken, async (req, res) => {
         if (status) {
             if (status.includes(',')) {
                 const statuses = status.split(',');
-                query += ` AND jp.status = ANY($${params.length + 1})`;
+                query += ` AND jp.status = ANY($${params.length + 1}::text[])`;
                 params.push(statuses);
             } else {
                 query += ` AND jp.status = $${params.length + 1}`;
@@ -59,7 +59,7 @@ router.get('/', authenticateToken, async (req, res) => {
         if (status) {
             if (status.includes(',')) {
                 const statuses = status.split(',');
-                countQuery += ` AND jp.status = ANY($${countParams.length + 1})`;
+                countQuery += ` AND jp.status = ANY($${countParams.length + 1}::text[])`;
                 countParams.push(statuses);
             } else {
                 countQuery += ` AND jp.status = $${countParams.length + 1}`;
