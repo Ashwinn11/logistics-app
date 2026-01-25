@@ -1596,24 +1596,36 @@ const ShipmentRegistry: React.FC = () => {
                                         <td className="py-4 px-6">{parseFloat(payment.amount).toFixed(2)}</td>
                                         <td className="py-4 px-6 text-center">
                                             <div className="flex justify-center">
-                                                {payment.status === 'Approved' ? (
-                                                    <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-green-600" title="Approved">
-                                                        <Check className="w-3.5 h-3.5" />
-                                                    </div>
+                                                {payment.status === 'Paid' ? (
+                                                    <span className="px-2 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200">
+                                                        Paid
+                                                    </span>
+                                                ) : payment.status === 'Approved' ? (
+                                                    <span className="px-2 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 border border-blue-200">
+                                                        Approved
+                                                    </span>
                                                 ) : payment.status === 'Draft' ? (
-                                                    <div className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-100 text-gray-500 border border-gray-200" title="Draft">
+                                                    <span className="px-2 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500 border border-gray-200">
                                                         Draft
-                                                    </div>
+                                                    </span>
                                                 ) : (
-                                                    <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center text-red-600" title="Pending">
-                                                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                                                    </div>
+                                                    <span className="px-2 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700 border border-orange-200">
+                                                        Pending
+                                                    </span>
                                                 )}
                                             </div>
                                         </td>
                                         <td className="py-4 px-6 text-center">
                                             <div className="flex items-center justify-center gap-2">
-
+                                                <button
+                                                    onClick={() => {
+                                                        alert('Approve logic coming soon');
+                                                    }}
+                                                    className="w-8 h-8 rounded-full hover:bg-green-50 text-gray-400 hover:text-green-600 transition-colors flex items-center justify-center"
+                                                    title="Approve"
+                                                >
+                                                    <Check className="w-4 h-4" />
+                                                </button>
                                                 <button
                                                     onClick={async () => {
                                                         if (window.confirm('Delete payment?')) {
