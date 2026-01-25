@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ChevronDown, Plus, Trash2 } from 'lucide-react';
+import { X, ChevronDown, Plus, Trash2, Save } from 'lucide-react';
 
 interface BLDrawerProps {
     isOpen: boolean;
@@ -219,7 +219,9 @@ const BLDrawer: React.FC<BLDrawerProps> = ({ isOpen, onClose, onSave, initialDat
                     {/* Footer */}
                     <div className="p-6 border-t border-gray-100 flex justify-end gap-3">
                         <button onClick={onClose} className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50">Cancel</button>
-                        <button onClick={handleSubmit} className="px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-sm">Save</button>
+                        <button onClick={handleSubmit} className="px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-sm flex items-center gap-2">
+                            <Save className="w-4 h-4" /> Save
+                        </button>
                     </div>
                 </div>
             </div>

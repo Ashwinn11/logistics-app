@@ -1967,12 +1967,14 @@ const ShipmentRegistry: React.FC = () => {
                 onClose={() => { setIsBLDrawerOpen(false); setNewBL({ master_bl: '', house_bl: '', loading_port: '', vessel: '', etd: '', eta: '', delivery_agent: '' }); }}
                 onSave={handleBLDrawerSave}
                 initialData={{
-                    ...(newBL.id ? newBL : {}),
-                    packages: selectedJob?.packages?.map((p: any) => ({
-                        pkg_count: p.count,
-                        pkg_type: p.type,
-                        weight: p.weight
-                    })) || []
+                    ...newBL,
+                    packages: (newBL.packages && newBL.packages.length > 0)
+                        ? newBL.packages
+                        : (selectedJob?.packages?.map((p: any) => ({
+                            pkg_count: p.count,
+                            pkg_type: p.type,
+                            weight: p.weight
+                        })) || [])
                 }}
                 deliveryAgents={deliveryAgentsList}
                 job={selectedJob}
