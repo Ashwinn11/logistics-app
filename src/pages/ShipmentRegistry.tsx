@@ -17,7 +17,7 @@ import BLDrawer from '../components/BLDrawer';
 import SearchableSelect from '../components/SearchableSelect';
 import ShipmentInvoiceDrawer from '../components/ShipmentInvoiceDrawer';
 
-const PACKAGE_TYPES = ['PALLET', 'BUNDLES', 'CARTON', 'PKG', 'BOX', 'CASE', 'BULK', 'UNIT'];
+
 
 
 interface PackageDetail {
@@ -592,58 +592,7 @@ const ShipmentRegistry: React.FC = () => {
         setEditingSection(null);
     };
 
-    const handlePackageChange = (index: number, field: string, value: any) => {
-        const newPackages = [...(editFormData.packages || [])];
-        newPackages[index] = { ...newPackages[index], [field]: value };
 
-        // Recalculate totals
-        const totalPkgs = newPackages.reduce((sum, p) => sum + (Number(p.count) || 0), 0);
-        const totalWeight = newPackages.reduce((sum, p) => sum + (Number(p.weight) || 0), 0);
-
-        // Determine derived type
-        let derivedType = '';
-        if (newPackages.length === 1) {
-            derivedType = newPackages[0].type || '';
-        } else if (newPackages.length > 1) {
-            derivedType = 'MIXED';
-        }
-
-        setEditFormData((prev: any) => ({
-            ...prev,
-            packages: newPackages,
-            no_of_pkgs: totalPkgs,
-            weight: totalWeight,
-            package_type: derivedType
-        }));
-    };
-
-    const addPackage = () => {
-        setEditFormData((prev: any) => ({
-            ...prev,
-            packages: [...(prev.packages || []), { count: '', weight: '', type: '' }]
-        }));
-    };
-
-    const removePackage = (index: number) => {
-        const newPackages = editFormData.packages.filter((_: any, i: number) => i !== index);
-        const totalPkgs = newPackages.reduce((sum: number, p: any) => sum + (Number(p.count) || 0), 0);
-        const totalWeight = newPackages.reduce((sum: number, p: any) => sum + (Number(p.weight) || 0), 0);
-
-        let derivedType = '';
-        if (newPackages.length === 1) {
-            derivedType = newPackages[0].type || '';
-        } else if (newPackages.length > 1) {
-            derivedType = 'MIXED';
-        }
-
-        setEditFormData((prev: any) => ({
-            ...prev,
-            packages: newPackages,
-            no_of_pkgs: totalPkgs,
-            weight: totalWeight,
-            package_type: derivedType
-        }));
-    };
 
     // Inline editing handlers removed as they are replaced by Drawers
     // Restoring handleEditChange as it is used by other legacy popups
@@ -1773,11 +1722,9 @@ const ShipmentRegistry: React.FC = () => {
                     <div className="flex justify-between items-center p-6 border-b border-gray-100">
                         <div>
                             <h3 className="text-xl font-bold text-gray-900 capitalize flex items-center gap-2">
-                                {popupType === 'invoice' && <Receipt className="w-6 h-6 text-indigo-600" />}
-                                {popupType === 'bl' && <FileSpreadsheet className="w-6 h-6 text-blue-600" />}
                                 {popupType === 'payment' && <CreditCard className="w-6 h-6 text-emerald-600" />}
                                 {popupType === 'upload' && <UploadCloud className="w-6 h-6 text-violet-600" />}
-                                {popupType === 'bl' ? 'BL/AWB Details' : popupType === 'invoice' ? 'Shipment Invoice' : popupType === 'payment' ? 'Payment Details' : 'Upload Document'}
+                                {popupType === 'payment' ? 'Payment Details' : 'Upload Document'}
                             </h3>
                             <p className="text-sm text-gray-500 mt-1">Job: {popupJob.id} - {popupJob.customer}</p>
                         </div>
@@ -1787,144 +1734,6 @@ const ShipmentRegistry: React.FC = () => {
                     </div>
 
                     <div className="p-6 overflow-y-auto custom-scrollbar">
-                        {popupType === 'invoice' && (
-                            <div className="grid grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Invoice No.</label>
-                                    <input name="invoice_no" value={editFormData.invoice_no || ''} onChange={handleEditChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="-" />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Cargo Type</label>
-                                    <select name="cargo_type" value={editFormData.cargo_type || 'GENERAL'} onChange={handleEditChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
-                                        <option value="GENERAL">GENERAL</option>
-                                        <option value="PERISHABLE">PERISHABLE</option>
-                                        <option value="HARDWARE">HARDWARE</option>
-                                        <option value="GARMENTS">GARMENTS</option>
-                                        <option value="ELECTRONICS">ELECTRONICS</option>
-                                        <option value="DRY FOODS">DRY FOODS</option>
-                                        <option value="FURNITURE">FURNITURE</option>
-                                        <option value="OTHER">OTHER</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">No. Items</label>
-                                    <input name="no_of_pkgs" value={editFormData.no_of_pkgs || ''} onChange={handleEditChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="0" />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Customs Form No.</label>
-                                    <input name="customs_r_form" value={editFormData.customs_r_form || ''} onChange={handleEditChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="-" />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Office</label>
-                                    <select name="office" value={editFormData.office || ''} onChange={handleEditChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
-                                        <option value="">Select Office</option>
-                                        <option value="00MP">00MP</option>
-                                        <option value="00AP">00AP</option>
-                                        <option value="00HA">00HA</option>
-                                        <option value="00BW">00BW</option>
-                                        <option value="00HK">00HK</option>
-                                        <option value="00HM">00HM</option>
-                                        <option value="00PO">00PO</option>
-                                        <option value="00SG">00SG</option>
-                                        <option value="00SH">00SH</option>
-                                    </select>
-                                </div>
-                            </div>
-                        )}
-
-                        {popupType === 'bl' && (
-                            <div className="grid grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Master No.</label>
-                                    <input name="bl_awb_no" value={editFormData.bl_awb_no || ''} onChange={handleEditChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="-" />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">House No.</label>
-                                    <input name="house_bl" value={editFormData.house_bl || ''} onChange={handleEditChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="-" />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">ETA</label>
-                                    <input type="date" name="expected_delivery_date" value={editFormData.expected_delivery_date ? new Date(editFormData.expected_delivery_date).toISOString().substr(0, 10) : ''} onChange={handleEditChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Loading Port</label>
-                                    <input name="loading_port" value={editFormData.loading_port || ''} onChange={handleEditChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="-" />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Vessel</label>
-                                    <input name="vessel" value={editFormData.vessel || ''} onChange={handleEditChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="-" />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Delivery Agent</label>
-                                    <select
-                                        name="delivery_agent"
-                                        value={editFormData.delivery_agent || ''}
-                                        onChange={handleEditChange}
-                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
-                                    >
-                                        <option value="">Select Delivery Agent</option>
-                                        {deliveryAgentsList.map((agent: any) => (
-                                            <option key={agent.id} value={agent.name}>
-                                                {agent.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="col-span-2">
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Packages</label>
-                                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 space-y-3">
-                                        <div className="grid grid-cols-10 gap-2 text-xs font-bold text-gray-400 mb-1">
-                                            <div className="col-span-3">Count</div>
-                                            <div className="col-span-4">Type</div>
-                                            <div className="col-span-3">Weight (KG)</div>
-                                        </div>
-                                        {editFormData.packages?.map((pkg: any, idx: number) => (
-                                            <div key={idx} className="grid grid-cols-10 gap-2 items-center">
-                                                <div className="col-span-3">
-                                                    <input
-                                                        type="number"
-                                                        value={pkg.count}
-                                                        onChange={e => handlePackageChange(idx, 'count', e.target.value)}
-                                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
-                                                        placeholder=""
-                                                    />
-                                                </div>
-                                                <div className="col-span-4">
-                                                    <select
-                                                        value={pkg.type}
-                                                        onChange={e => handlePackageChange(idx, 'type', e.target.value)}
-                                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white"
-                                                    >
-                                                        {PACKAGE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                                                    </select>
-                                                </div>
-                                                <div className="col-span-3 flex items-center gap-2">
-                                                    <input
-                                                        type="number"
-                                                        value={pkg.weight}
-                                                        onChange={e => handlePackageChange(idx, 'weight', e.target.value)}
-                                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
-                                                        placeholder=""
-                                                    />
-                                                    {editFormData.packages.length > 1 && (
-                                                        <button onClick={() => removePackage(idx)} className="text-gray-400 hover:text-red-500">
-                                                            <X className="w-4 h-4" />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))}
-                                        <button onClick={addPackage} className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-indigo-500 hover:text-indigo-600 transition-colors text-sm font-medium flex justify-center items-center gap-2">
-                                            <Plus className="w-4 h-4" /> Add Package
-                                        </button>
-                                        <div className="flex justify-between items-center pt-2 text-sm font-bold text-gray-700">
-                                            <span>Total:</span>
-                                            <span>{editFormData.no_of_pkgs} Pkgs / {editFormData.weight} KG</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
 
                         {popupType === 'payment' && (
                             <div className="space-y-4">
@@ -2040,6 +1849,7 @@ const ShipmentRegistry: React.FC = () => {
         );
     };
 
+
     return (
         <Layout>
             <div className="h-[calc(100vh-100px)] flex border border-gray-200 rounded-2xl overflow-hidden bg-white shadow-sm font-sans">
@@ -2144,6 +1954,7 @@ const ShipmentRegistry: React.FC = () => {
             )}
 
 
+            {renderPopup()}
 
             <ShipmentInvoiceDrawer
                 isOpen={isInvoiceDrawerOpen}
