@@ -65,6 +65,7 @@ const ShipmentRegistry: React.FC = () => {
     const [isBLDrawerOpen, setIsBLDrawerOpen] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [popupJob, setPopupJob] = useState<any | null>(null);
+    const [popupData, setPopupData] = useState<any | null>(null);
     const [popupType, setPopupType] = useState<'invoice' | 'bl' | 'payment' | 'upload' | 'schedule' | null>(null);
 
     // Multi-Container / Multi-BL State
@@ -566,32 +567,7 @@ const ShipmentRegistry: React.FC = () => {
         setEditFormData((prev: any) => ({ ...prev, [name]: value }));
     };
 
-    const handleScheduleSave = async (data: any) => {
-        try {
-            const currentJobId = popupJob?.id || selectedJob?.id;
-            if (!currentJobId) return;
 
-            await clearanceAPI.create({
-                job_id: currentJobId,
-                ...data
-            });
-            alert('Clearance Scheduled Successfully!');
-
-            // Refresh Data
-            loadJobs(true);
-            const updatedJob = await shipmentsAPI.getById(currentJobId);
-            setSelectedJob(updatedJob.data);
-
-            // Close popup if it was open via popup state
-            if (popupType === 'schedule') {
-                setPopupType(null);
-                setPopupJob(null);
-            }
-        } catch (error) {
-            console.error('Failed to schedule clearance', error);
-            alert('Failed to schedule clearance');
-        }
-    };
 
     const getModeIcon = (mode: string) => {
         switch (mode?.toUpperCase()) {
@@ -1403,6 +1379,14 @@ const ShipmentRegistry: React.FC = () => {
                                                         <option value="FCL 40">FCL 40</option>
                                                         <option value="LCL 20">LCL 20</option>
                                                         <option value="LCL 40">LCL 40</option>
+                                                        <option value="OT 20">OT 20</option>
+                                                        <option value="OT 40">OT 40</option>
+                                                        <option value="FR 20">FR 20</option>
+                                                        <option value="FR 40">FR 40</option>
+                                                        <option value="DR">D/R</option>
+                                                        <option value="RF 20">Reefer 20 ft</option>
+                                                        <option value="RF 40">Reefer 40 ft</option>
+                                                        <option value="LO">Loose Cargo</option>
                                                     </select>
                                                 </td>
                                                 <td className="p-2">
@@ -1468,6 +1452,24 @@ const ShipmentRegistry: React.FC = () => {
                                                         <td className="py-3 px-4 text-gray-600">{c.unloaded_date ? new Date(c.unloaded_date).toLocaleDateString() : '-'}</td>
                                                         <td className="py-3 px-4 text-right">
                                                             <div className="flex justify-end gap-2">
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setPopupJob(selectedJob);
+                                                                        setPopupData({
+                                                                            container_no: c.container_no,
+                                                                            container_type: c.container_type,
+                                                                            container_details: `${c.container_type} - ${c.container_no}`,
+                                                                            // Fallback to job details if needed, but container specific is key
+                                                                            packages: selectedJob.packages ? selectedJob.packages.map((p: any) => `${p.count} ${p.type}`).join(', ') : (selectedJob.no_of_pkgs || ''),
+                                                                            transport_mode: selectedJob.transport_mode
+                                                                        });
+                                                                        setPopupType('schedule');
+                                                                    }}
+                                                                    className="text-gray-400 hover:text-orange-600 p-1.5 rounded hover:bg-orange-50"
+                                                                    title="Schedule Clearance"
+                                                                >
+                                                                    <Calendar className="w-4 h-4" />
+                                                                </button>
                                                                 <button
                                                                     onClick={() => {
                                                                         setEditingContainerId(c.id);
@@ -1613,7 +1615,7 @@ const ShipmentRegistry: React.FC = () => {
         );
     };
 
-    const handlePopupSave = async () => {
+    const handlePopupSave = async (data: any = {}) => {
         if (!popupJob) return;
         try {
             setLoading(true);
@@ -1621,7 +1623,7 @@ const ShipmentRegistry: React.FC = () => {
             if (popupType === 'schedule') {
                 await clearanceAPI.create({
                     job_id: popupJob.id,
-                    ...editFormData
+                    ...data // Use data passed from drawer
                 });
                 // Relaxed refresh logic
                 const res = await shipmentsAPI.getById(popupJob.id);
@@ -1891,9 +1893,10 @@ const ShipmentRegistry: React.FC = () => {
             {popupType === 'schedule' && popupJob && (
                 <ScheduleClearanceDrawer
                     isOpen={true}
-                    onClose={() => { setPopupType(null); setPopupJob(null); }}
-                    onSave={handleScheduleSave}
+                    onClose={() => { setPopupType(null); setPopupJob(null); setPopupData(null); }}
+                    onSave={handlePopupSave}
                     job={popupJob}
+                    initialData={popupData}
                     title="Schedule Clearance"
                 />
             )}
