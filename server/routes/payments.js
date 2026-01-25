@@ -113,6 +113,37 @@ router.put('/:id/status', authenticateToken, async (req, res) => {
     }
 });
 
+// Update payment amount/details
+router.put('/:id', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { amount } = req.body;
+
+        if (!amount) {
+            return res.status(400).json({ error: 'Amount is required' });
+        }
+
+        const result = await pool.query(
+            'UPDATE job_payments SET amount = $1 WHERE id = $2 RETURNING *',
+            [amount, id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Payment not found' });
+        }
+
+        await pool.query(
+            'INSERT INTO audit_logs (user_id, action, details, entity_type, entity_id) VALUES ($1, $2, $3, $4, $5)',
+            [req.user.id, 'UPDATE_PAYMENT', `Updated payment amount to ${amount}`, 'PAYMENT', id]
+        );
+
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Update payment error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 router.get('/job/:jobId', authenticateToken, async (req, res) => {
     try {
         const { jobId } = req.params;

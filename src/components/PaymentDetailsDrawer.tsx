@@ -1,5 +1,6 @@
 import React from 'react';
-import { X, FileText, Receipt } from 'lucide-react';
+import { X, Receipt, Check, Pencil } from 'lucide-react';
+import { paymentsAPI } from '../services/api';
 
 interface PaymentDetailsDrawerProps {
     isOpen: boolean;
@@ -8,18 +9,40 @@ interface PaymentDetailsDrawerProps {
 }
 
 const PaymentDetailsDrawer: React.FC<PaymentDetailsDrawerProps> = ({ isOpen, onClose, payment }) => {
-    if (!isOpen || !payment) return null;
+    const [editingId, setEditingId] = React.useState<string | null>(null);
+    const [editAmount, setEditAmount] = React.useState('');
+    const [items, setItems] = React.useState<any[]>([]);
+
+    React.useEffect(() => {
+        if (payment) {
+            setItems(Array.isArray(payment) ? payment : [payment]);
+        }
+    }, [payment]);
+
+    if (!isOpen || !items.length) return null;
+
+    const totalAmount = items.reduce((sum, item) => sum + parseFloat(item.amount || '0'), 0);
+
+    const handleEditClick = (item: any) => {
+        setEditingId(item.id);
+        setEditAmount(item.amount);
+    };
+
+    const handleSave = async (id: string) => {
+        try {
+            await paymentsAPI.update(id, { amount: editAmount });
+            setItems(prev => prev.map(item => item.id === id ? { ...item, amount: editAmount } : item));
+            setEditingId(null);
+        } catch (error) {
+            console.error(error);
+            alert('Failed to update amount');
+        }
+    };
 
     const formatCurrency = (amount: number | string) => {
         return new Intl.NumberFormat('en-MV', { style: 'currency', currency: 'MVR' }).format(Number(amount));
     };
 
-    const formatDate = (dateString: string) => {
-        if (!dateString) return '';
-        return new Date(dateString).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
-    };
-
-    const voucherNo = `VC.${new Date(payment.created_at).getFullYear()}.${String(payment.id).padStart(4, '0')}`;
 
     return (
         <div className="fixed inset-0 z-50 overflow-hidden">
@@ -39,62 +62,66 @@ const PaymentDetailsDrawer: React.FC<PaymentDetailsDrawerProps> = ({ isOpen, onC
                     {/* Content */}
                     <div className="flex-1 overflow-y-auto p-6">
 
-                        {/* Vendor Section */}
-                        <div className="mb-8">
-                            <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Paid to</p>
-                            <div className="flex justify-between items-start">
-                                <h3 className="text-xl font-bold text-gray-900">{payment.vendor}</h3>
-                                <div className="p-2 bg-gray-50 rounded-lg">
-                                    <FileText className="w-5 h-5 text-gray-600" />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Info Grid */}
-                        <div className="grid grid-cols-3 gap-6 mb-8">
-                            <div>
-                                <p className="text-xs font-semibold text-gray-500 mb-1">Voucher #</p>
-                                <p className="text-sm font-medium text-gray-900">{voucherNo}</p>
-                            </div>
-                            <div>
-                                <p className="text-xs font-semibold text-gray-500 mb-1">Reference</p>
-                                <p className="text-sm font-medium text-gray-900 break-words">{payment.bill_ref_no || '-'}</p>
-                            </div>
-                            <div>
-                                <p className="text-xs font-semibold text-gray-500 mb-1">Total</p>
-                                <p className="text-sm font-bold text-gray-900">{formatCurrency(payment.amount)}</p>
-                            </div>
-                        </div>
-
                         {/* Payment Items */}
                         <div className="mb-8">
                             <h4 className="text-sm font-bold text-gray-900 mb-4">Payment Items</h4>
                             <div className="space-y-3">
-                                {/* Single Item since our DB structure is 1 row per payment request currently */}
-                                <div className="flex items-center gap-4 py-3 border-b border-gray-50">
-                                    <div className="p-2 bg-gray-100 rounded-lg text-gray-500">
-                                        <Receipt className="w-4 h-4" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-3 mb-1">
-                                            <span className="text-xs font-medium text-gray-500">{payment.job_id}</span>
-                                            <span className="text-sm font-medium text-gray-900">{payment.payment_type}</span>
+                                {items.map((item, index) => (
+                                    <div key={item.id || index} className="flex items-center gap-4 py-3 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors rounded-lg px-2">
+                                        <div className="p-2 bg-gray-100 rounded-lg text-gray-500">
+                                            <Receipt className="w-4 h-4" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-3 mb-1">
+                                                <span className="text-xs font-medium text-gray-500">{item.job_id}</span>
+                                                <span className="text-sm font-medium text-gray-900">{item.payment_type}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                            {editingId === item.id ? (
+                                                <div className="flex items-center gap-1">
+                                                    <input
+                                                        type="number"
+                                                        value={editAmount}
+                                                        onChange={e => setEditAmount(e.target.value)}
+                                                        className="w-24 p-1 text-right text-sm border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none"
+                                                        autoFocus
+                                                    />
+                                                    <button onClick={() => handleSave(item.id)} className="p-1 text-green-600 hover:bg-green-50 rounded"><Check className="w-4 h-4" /></button>
+                                                    <button onClick={() => setEditingId(null)} className="p-1 text-red-600 hover:bg-red-50 rounded"><X className="w-4 h-4" /></button>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <span className="text-sm font-bold text-gray-900">{formatCurrency(item.amount)}</span>
+                                                    {(item.status === 'Pending' || item.status === 'Draft') && (
+                                                        <button
+                                                            onClick={() => handleEditClick(item)}
+                                                            className="p-1 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                                                            title="Edit Amount"
+                                                        >
+                                                            <Pencil className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    )}
+                                                </>
+                                            )}
                                         </div>
                                     </div>
-                                    <span className="text-sm font-bold text-gray-900">{formatCurrency(payment.amount)}</span>
-                                </div>
+                                ))}
                             </div>
                         </div>
+                    </div>
 
-                        {/* Footer Info */}
-                        <div className="text-sm text-gray-500">
-                            Paid on {formatDate(payment.created_at)}
+                    {/* Footer Total */}
+                    <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+                        <div className="flex justify-between items-center">
+                            <span className="text-base font-medium text-gray-600">Total Payable</span>
+                            <span className="text-xl font-bold text-gray-900">{formatCurrency(totalAmount)}</span>
                         </div>
 
                     </div>
 
-                    {/* Footer Actions (Optional/Placeholder) */}
-                    {/* If needed we can add print/download buttons here later */}
+
                 </div>
             </div>
         </div>

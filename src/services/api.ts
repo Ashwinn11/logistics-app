@@ -217,6 +217,7 @@ export const paymentsAPI = {
     getAll: (jobId: string) => api.get(`/payments/job/${jobId}`),
     getListing: (params?: { search?: string; page?: number; limit?: number; status?: string }) => api.get('/payments', { params }),
     create: (data: any) => api.post('/payments', data),
+    update: (id: string | number, data: any) => api.put(`/payments/${id}`, data),
     updateStatus: (id: number | string, status: string) => api.put(`/payments/${id}/status`, { status }),
     delete: (id: number | string) => api.delete(`/payments/${id}`),
     sendBatch: (paymentIds: string[]) => api.post('/payments/send-batch', { paymentIds }),
