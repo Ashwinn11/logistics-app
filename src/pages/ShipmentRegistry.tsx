@@ -69,6 +69,7 @@ const ShipmentRegistry: React.FC = () => {
 
     // Multi-Container / Multi-BL State
     const [addingContainer, setAddingContainer] = useState(false);
+    const [editingContainerId, setEditingContainerId] = useState<string | null>(null);
     const [newContainer, setNewContainer] = useState<any>({ container_no: '', container_type: 'FCL 20', unloaded_date: '' });
 
     const [newBL, setNewBL] = useState<any>({ master_bl: '', house_bl: '', loading_port: '', vessel: '', etd: '', eta: '', delivery_agent: '' });
@@ -117,6 +118,7 @@ const ShipmentRegistry: React.FC = () => {
             setSelectedJob(updatedJob);
             setJobs(prev => prev.map(j => j.id === selectedJob.id ? updatedJob : j));
             setAddingContainer(false);
+            setEditingContainerId(null);
             setNewContainer({ container_no: '', container_type: 'FCL 20', unloaded_date: '' });
         } catch (e) {
             console.error(e);
@@ -1413,19 +1415,78 @@ const ShipmentRegistry: React.FC = () => {
                                             </tr>
                                         )}
                                         {selectedJob.containers && selectedJob.containers.length > 0 ? (
-                                            selectedJob.containers.map((c: any) => (
-                                                <tr key={c.id} className="hover:bg-gray-50 transition-colors">
-                                                    <td className="py-3 px-4 font-bold text-gray-900">{c.container_no}</td>
-                                                    <td className="py-3 px-4 text-gray-600">{c.container_type}</td>
-                                                    <td className="py-3 px-4 text-gray-600">{c.unloaded_date ? new Date(c.unloaded_date).toLocaleDateString() : '-'}</td>
-                                                    <td className="py-3 px-4 text-right">
-                                                        <div className="flex justify-end gap-2">
-                                                            <button className="text-gray-400 hover:text-indigo-600 p-1.5 rounded hover:bg-indigo-50"><Search className="w-4 h-4" /></button>
-                                                            <button onClick={() => handleDeleteContainerItem(c.id)} className="text-gray-400 hover:text-red-600 p-1.5 rounded hover:bg-red-50"><Trash2 className="w-4 h-4" /></button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))
+                                            selectedJob.containers.map((c: any) => {
+                                                const isEditing = c.id === editingContainerId;
+                                                return isEditing ? (
+                                                    <tr key={c.id} className="bg-indigo-50/30">
+                                                        <td className="p-2">
+                                                            <input
+                                                                value={newContainer.container_no}
+                                                                onChange={e => setNewContainer({ ...newContainer, container_no: e.target.value })}
+                                                                className="input-field w-full py-1 px-2 border rounded"
+                                                                placeholder="No."
+                                                                autoFocus
+                                                            />
+                                                        </td>
+                                                        <td className="p-2">
+                                                            <select
+                                                                value={newContainer.container_type}
+                                                                onChange={e => setNewContainer({ ...newContainer, container_type: e.target.value })}
+                                                                className="input-field w-full py-1 px-2 border rounded bg-white"
+                                                            >
+                                                                <option value="FCL 20">FCL 20</option>
+                                                                <option value="FCL 40">FCL 40</option>
+                                                                <option value="LCL 20">LCL 20</option>
+                                                                <option value="LCL 40">LCL 40</option>
+                                                                <option value="OT 20">OT 20</option>
+                                                                <option value="OT 40">OT 40</option>
+                                                                <option value="FR 20">FR 20</option>
+                                                                <option value="FR 40">FR 40</option>
+                                                                <option value="DR">D/R</option>
+                                                                <option value="RF 20">Reefer 20 ft</option>
+                                                                <option value="RF 40">Reefer 40 ft</option>
+                                                                <option value="LO">Loose Cargo</option>
+                                                            </select>
+                                                        </td>
+                                                        <td className="p-2">
+                                                            <input
+                                                                type="date"
+                                                                value={newContainer.unloaded_date || ''}
+                                                                onChange={e => setNewContainer({ ...newContainer, unloaded_date: e.target.value })}
+                                                                className="input-field w-full py-1 px-2 border rounded"
+                                                            />
+                                                        </td>
+                                                        <td className="p-2 text-right">
+                                                            <button onClick={handleSaveNewContainer} className="text-green-600 hover:bg-green-100 p-1 rounded mr-2"><Check className="w-4 h-4" /></button>
+                                                            <button onClick={() => { setEditingContainerId(null); setNewContainer({ container_no: '', container_type: 'FCL 20', unloaded_date: '' }); }} className="text-gray-500 hover:bg-gray-100 p-1 rounded"><X className="w-4 h-4" /></button>
+                                                        </td>
+                                                    </tr>
+                                                ) : (
+                                                    <tr key={c.id} className="hover:bg-gray-50 transition-colors">
+                                                        <td className="py-3 px-4 font-bold text-gray-900">{c.container_no}</td>
+                                                        <td className="py-3 px-4 text-gray-600">{c.container_type}</td>
+                                                        <td className="py-3 px-4 text-gray-600">{c.unloaded_date ? new Date(c.unloaded_date).toLocaleDateString() : '-'}</td>
+                                                        <td className="py-3 px-4 text-right">
+                                                            <div className="flex justify-end gap-2">
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setEditingContainerId(c.id);
+                                                                        setNewContainer({
+                                                                            ...c,
+                                                                            unloaded_date: c.unloaded_date ? new Date(c.unloaded_date).toISOString().split('T')[0] : ''
+                                                                        });
+                                                                        setAddingContainer(false);
+                                                                    }}
+                                                                    className="text-gray-400 hover:text-indigo-600 p-1.5 rounded hover:bg-indigo-50"
+                                                                >
+                                                                    <Pencil className="w-4 h-4" />
+                                                                </button>
+                                                                <button onClick={() => handleDeleteContainerItem(c.id)} className="text-gray-400 hover:text-red-600 p-1.5 rounded hover:bg-red-50"><Trash2 className="w-4 h-4" /></button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
                                         ) : (
                                             !addingContainer && (
                                                 <tr>
