@@ -339,6 +339,137 @@ const ShipmentDetails: React.FC = () => {
                         </div>
                     </div>
 
+                    {/* Packages Details (New Section) */}
+                    <div className="glass-card p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                                <Box className="w-5 h-5 text-primary-600 mr-2" />
+                                Package Details
+                            </h3>
+                            {isEditing && (
+                                <button
+                                    onClick={() => {
+                                        const currentPackages = Array.isArray(formData.packages) ? formData.packages : [];
+                                        setFormData({
+                                            ...formData,
+                                            packages: [...currentPackages, { count: '', type: '', weight: '', dimensions: '' }]
+                                        });
+                                    }}
+                                    className="text-sm btn-secondary py-1 px-3"
+                                >
+                                    + Add Package
+                                </button>
+                            )}
+                        </div>
+
+                        {(!shipment.packages || shipment.packages.length === 0) && !isEditing ? (
+                            <p className="text-gray-500 italic">No package details available.</p>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm text-left">
+                                    <thead className="bg-gray-50 text-gray-600 font-medium border-b border-gray-200">
+                                        <tr>
+                                            <th className="py-2 px-3">Count</th>
+                                            <th className="py-2 px-3">Type</th>
+                                            <th className="py-2 px-3">Weight (kg)</th>
+                                            <th className="py-2 px-3">Dimensions</th>
+                                            {isEditing && <th className="py-2 px-3 w-10"></th>}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {(isEditing ? (Array.isArray(formData.packages) ? formData.packages : []) : (Array.isArray(shipment.packages) ? shipment.packages : [])).map((pkg: any, idx: number) => (
+                                            <tr key={idx} className="hover:bg-gray-50/50">
+                                                <td className="py-2 px-3">
+                                                    {isEditing ? (
+                                                        <input
+                                                            type="number"
+                                                            value={pkg.count || ''}
+                                                            onChange={(e) => {
+                                                                const newPackages = [...(formData.packages || [])];
+                                                                newPackages[idx] = { ...newPackages[idx], count: e.target.value };
+                                                                setFormData({ ...formData, packages: newPackages });
+                                                            }}
+                                                            className="input-field py-1 px-2 text-sm"
+                                                            placeholder="Qty"
+                                                        />
+                                                    ) : (
+                                                        pkg.count || '-'
+                                                    )}
+                                                </td>
+                                                <td className="py-2 px-3">
+                                                    {isEditing ? (
+                                                        <input
+                                                            type="text"
+                                                            value={pkg.type || ''}
+                                                            onChange={(e) => {
+                                                                const newPackages = [...(formData.packages || [])];
+                                                                newPackages[idx] = { ...newPackages[idx], type: e.target.value };
+                                                                setFormData({ ...formData, packages: newPackages });
+                                                            }}
+                                                            className="input-field py-1 px-2 text-sm"
+                                                            placeholder="Box, Pallet..."
+                                                        />
+                                                    ) : (
+                                                        pkg.type || '-'
+                                                    )}
+                                                </td>
+                                                <td className="py-2 px-3">
+                                                    {isEditing ? (
+                                                        <input
+                                                            type="number"
+                                                            value={pkg.weight || ''}
+                                                            onChange={(e) => {
+                                                                const newPackages = [...(formData.packages || [])];
+                                                                newPackages[idx] = { ...newPackages[idx], weight: e.target.value };
+                                                                setFormData({ ...formData, packages: newPackages });
+                                                            }}
+                                                            className="input-field py-1 px-2 text-sm"
+                                                            placeholder="0.0"
+                                                        />
+                                                    ) : (
+                                                        pkg.weight ? `${pkg.weight} kg` : '-'
+                                                    )}
+                                                </td>
+                                                <td className="py-2 px-3">
+                                                    {isEditing ? (
+                                                        <input
+                                                            type="text"
+                                                            value={pkg.dimensions || ''}
+                                                            onChange={(e) => {
+                                                                const newPackages = [...(formData.packages || [])];
+                                                                newPackages[idx] = { ...newPackages[idx], dimensions: e.target.value };
+                                                                setFormData({ ...formData, packages: newPackages });
+                                                            }}
+                                                            className="input-field py-1 px-2 text-sm"
+                                                            placeholder="LxWxH"
+                                                        />
+                                                    ) : (
+                                                        pkg.dimensions || '-'
+                                                    )}
+                                                </td>
+                                                {isEditing && (
+                                                    <td className="py-2 px-3 text-center">
+                                                        <button
+                                                            onClick={() => {
+                                                                const newPackages = [...(formData.packages || [])];
+                                                                newPackages.splice(idx, 1);
+                                                                setFormData({ ...formData, packages: newPackages });
+                                                            }}
+                                                            className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50"
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                        </button>
+                                                    </td>
+                                                )}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+
+
                     {/* Sidebar Content - Right Column */}
                     <div className="space-y-6">
                         {/* Status & Tracking */}
