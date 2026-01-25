@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Search, X, FileText } from 'lucide-react';
+import { Search, X, FileText, CheckCircle } from 'lucide-react';
 import Layout from '../components/Layout';
 import { paymentsAPI } from '../services/api';
 import PaymentDetailsDrawer from '../components/PaymentDetailsDrawer';
+import ProcessPaymentModal from '../components/ProcessPaymentModal';
 
 const Payments = () => {
     const [payments, setPayments] = useState<any[]>([]);
@@ -14,6 +15,7 @@ const Payments = () => {
 
     const [selectedPayment, setSelectedPayment] = useState<any>(null);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [isProcessModalOpen, setIsProcessModalOpen] = useState(false);
 
     // Batch Selection State
     const [selectedPayments, setSelectedPayments] = useState<any[]>([]);
@@ -26,7 +28,7 @@ const Payments = () => {
     const fetchPayments = async () => {
         try {
             setLoading(true);
-            const statusFilter = activeTab === 'pending' ? 'Pending' : 'Paid';
+            const statusFilter = activeTab === 'pending' ? 'Pending,Approved' : 'Paid';
             const response = await paymentsAPI.getListing({
                 search: searchTerm,
                 page,
@@ -34,7 +36,6 @@ const Payments = () => {
                 status: statusFilter
             });
             setPayments(response.data.data);
-            // Clear selection on refresh/tab switch to avoid inconsistencies
             setSelectedPayments([]);
             setSelectedVendor(null);
         } catch (error) {
@@ -47,11 +48,29 @@ const Payments = () => {
     const handleApprove = async (id: string) => {
         if (!confirm('Are you sure you want to approve this payment?')) return;
         try {
-            await paymentsAPI.updateStatus(id, 'Paid');
+            await paymentsAPI.updateStatus(id, 'Approved');
             fetchPayments();
         } catch (error) {
             console.error('Failed to approve payment', error);
             alert('Failed to approve payment');
+        }
+    };
+
+    const handleProcessBatch = async (data: any) => {
+        try {
+            setLoading(true);
+            await paymentsAPI.processBatch({
+                paymentIds: selectedPayments.map(p => p.id),
+                ...data
+            });
+            alert('Payments processed successfully!');
+            setIsProcessModalOpen(false);
+            fetchPayments();
+        } catch (error) {
+            console.error('Failed to process payments', error);
+            alert('Failed to process payments');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -61,19 +80,16 @@ const Payments = () => {
         const isSelected = selectedPayments.some(p => p.id === payment.id);
 
         if (isSelected) {
-            // Deselect
             const updated = selectedPayments.filter(p => p.id !== payment.id);
             setSelectedPayments(updated);
             if (updated.length === 0) {
                 setSelectedVendor(null);
             }
         } else {
-            // Select
             if (selectedPayments.length === 0) {
                 setSelectedPayments([payment]);
                 setSelectedVendor(payment.vendor);
             } else {
-                // Check Vendor
                 if (payment.vendor !== selectedVendor) {
                     alert('Only payments from the same vendor can be settled at a time.');
                     return;
@@ -106,6 +122,7 @@ const Payments = () => {
     };
 
     const totalPayable = selectedPayments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+    const allApproved = selectedPayments.length > 0 && selectedPayments.every(p => p.status === 'Approved');
 
     return (
         <Layout>
@@ -114,7 +131,6 @@ const Payments = () => {
                 <div className="px-8 pt-8 pb-4">
                     <h1 className="text-3xl font-bold text-gray-900">Payment Request</h1>
 
-                    {/* Tabs */}
                     <div className="flex gap-8 mt-6 border-b border-gray-200">
                         <button
                             onClick={() => { setActiveTab('pending'); setPage(1); }}
@@ -168,7 +184,6 @@ const Payments = () => {
                                         <th className="pb-3 px-2 w-[10%]">Action</th>
                                     </>
                                 ) : (
-                                    // Payments Tab Headers
                                     <>
                                         <th className="pb-3 px-2">Voucher#</th>
                                         <th className="pb-3 px-2">Vendor</th>
@@ -193,7 +208,6 @@ const Payments = () => {
                             ) : (
                                 payments.map((item, index) => {
                                     const isSelected = selectedPayments.some(p => p.id === item.id);
-                                    // Highlight if selected or if part of the same vendor group (optional UX, keeping simple for now)
                                     const isSameVendor = selectedVendor && item.vendor === selectedVendor;
                                     const bgClass = isSelected ? 'bg-indigo-50 hover:bg-indigo-100' :
                                         (selectedVendor && !isSameVendor && activeTab === 'pending') ? 'opacity-50 hover:bg-white' :
@@ -237,19 +251,25 @@ const Payments = () => {
                                                         <span className="text-sm font-bold text-gray-900">{formatCurrency(item.amount)}</span>
                                                     </td>
                                                     <td className="py-4 px-2 align-top">
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); handleApprove(item.id); }}
-                                                            className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
-                                                        >
-                                                            Approve
-                                                        </button>
+                                                        {item.status === 'Approved' ? (
+                                                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-100 px-2 py-1 rounded-full">
+                                                                <CheckCircle className="w-3 h-3" />
+                                                                Approved
+                                                            </span>
+                                                        ) : (
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleApprove(item.id); }}
+                                                                className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
+                                                            >
+                                                                Approve
+                                                            </button>
+                                                        )}
                                                     </td>
                                                 </>
                                             ) : (
                                                 <>
-                                                    {/* Payments Row */}
                                                     <td className="py-4 px-2 align-top">
-                                                        <span className="text-sm font-bold text-blue-900">VC.{new Date(item.created_at).getFullYear()}.{String(item.id).padStart(4, '0')}</span>
+                                                        <span className="text-sm font-bold text-blue-900">{item.voucher_no || '-'}</span>
                                                     </td>
                                                     <td className="py-4 px-2 align-top">
                                                         <span className="text-sm text-gray-900">{item.vendor}</span>
@@ -259,11 +279,13 @@ const Payments = () => {
                                                     </td>
                                                     <td className="py-4 px-2 align-top">
                                                         <span className="text-sm text-gray-600">
-                                                            {new Date(item.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                                            {item.paid_at ? new Date(item.paid_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}
                                                         </span>
                                                     </td>
                                                     <td className="py-4 px-2 align-top">
-                                                        <span className="text-sm text-gray-600">{item.paid_by || 'Admin'}</span>
+                                                        <span className="text-sm text-gray-600">
+                                                            {item.processed_by_name || item.paid_by || 'Admin'}
+                                                        </span>
                                                     </td>
                                                     <td className="py-4 px-2 align-top text-right">
                                                         <span className="text-sm font-bold text-gray-900">{formatCurrency(item.amount)}</span>
@@ -313,6 +335,11 @@ const Payments = () => {
                                             </div>
                                             <p className="text-sm font-semibold text-gray-800 mt-1">{p.payment_type}</p>
                                             <p className="text-xs text-gray-500 mt-0.5">{p.vendor}</p>
+                                            {p.status === 'Approved' ? (
+                                                <span className="text-[10px] text-green-600 bg-green-50 px-1.5 py-0.5 rounded font-medium mt-1 inline-block">Approved</span>
+                                            ) : (
+                                                <span className="text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded font-medium mt-1 inline-block">Pending Approval</span>
+                                            )}
                                         </div>
                                     </div>
                                     <button
@@ -331,8 +358,18 @@ const Payments = () => {
                                 <span className="text-xl font-bold text-gray-900">{formatCurrency(totalPayable)}</span>
                             </div>
                             <button
-                                className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-shadow shadow-lg shadow-indigo-200"
-                                onClick={() => alert('Proceed to Payment Gateway / Voucher Creation (Coming Soon)')}
+                                className={`w-full py-3 rounded-xl font-bold transition-all shadow-lg ${allApproved
+                                    ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200'
+                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none'
+                                    }`}
+                                onClick={() => {
+                                    if (allApproved) {
+                                        setIsProcessModalOpen(true);
+                                    } else {
+                                        alert('All selected payments must be approved before processing.');
+                                    }
+                                }}
+                                disabled={!allApproved}
                             >
                                 Next
                             </button>
@@ -344,6 +381,14 @@ const Payments = () => {
                     isOpen={isDrawerOpen}
                     onClose={() => setIsDrawerOpen(false)}
                     payment={selectedPayment}
+                />
+
+                <ProcessPaymentModal
+                    isOpen={isProcessModalOpen}
+                    onClose={() => setIsProcessModalOpen(false)}
+                    onProcess={handleProcessBatch}
+                    totalAmount={formatCurrency(totalPayable)}
+                    count={selectedPayments.length}
                 />
             </div>
         </Layout>

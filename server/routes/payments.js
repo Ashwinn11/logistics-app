@@ -11,17 +11,24 @@ router.get('/', authenticateToken, async (req, res) => {
         const offset = (page - 1) * limit;
 
         let query = `
-            SELECT jp.*, u.username as requested_by_name, s.customer
+            SELECT jp.*, u.username as requested_by_name, pu.username as processed_by_name, s.customer
             FROM job_payments jp
             LEFT JOIN users u ON jp.requested_by = u.id
+            LEFT JOIN users pu ON jp.processed_by = pu.id
             LEFT JOIN shipments s ON jp.job_id = s.id
             WHERE 1=1
         `;
         const params = [];
 
         if (status) {
-            query += ` AND jp.status = $${params.length + 1}`;
-            params.push(status);
+            if (status.includes(',')) {
+                const statuses = status.split(',');
+                query += ` AND jp.status = ANY($${params.length + 1})`;
+                params.push(statuses);
+            } else {
+                query += ` AND jp.status = $${params.length + 1}`;
+                params.push(status);
+            }
         }
 
         if (search) {
@@ -50,8 +57,14 @@ router.get('/', authenticateToken, async (req, res) => {
         const countParams = [];
 
         if (status) {
-            countQuery += ` AND jp.status = $${countParams.length + 1}`;
-            countParams.push(status);
+            if (status.includes(',')) {
+                const statuses = status.split(',');
+                countQuery += ` AND jp.status = ANY($${countParams.length + 1})`;
+                countParams.push(statuses);
+            } else {
+                countQuery += ` AND jp.status = $${countParams.length + 1}`;
+                countParams.push(status);
+            }
         }
 
         if (search) {
@@ -227,6 +240,86 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error('Delete payment error:', error);
         res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Process Batch Payments (Pending/Approved -> Paid)
+router.post('/process-batch', authenticateToken, async (req, res) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const { paymentIds, comments, reference, paymentDate, paymentMode } = req.body;
+        const processed_by = req.user.id;
+
+        if (!paymentIds || !Array.isArray(paymentIds) || paymentIds.length === 0) {
+            return res.status(400).json({ error: 'No items to process' });
+        }
+
+        // Generate Voucher Number
+        // VH-{YYYY}-001
+        const currentYear = new Date().getFullYear();
+        const prefix = `VH-${currentYear}-`;
+
+        // Find last voucher number for this year
+        const lastVoucherRes = await client.query(
+            `SELECT voucher_no FROM job_payments WHERE voucher_no LIKE $1 ORDER BY voucher_no DESC LIMIT 1`,
+            [`${prefix}%`]
+        );
+
+        let sequence = 1;
+        if (lastVoucherRes.rows.length > 0 && lastVoucherRes.rows[0].voucher_no) {
+            const lastNo = lastVoucherRes.rows[0].voucher_no;
+            const parts = lastNo.split('-');
+            if (parts.length === 3) {
+                sequence = parseInt(parts[2], 10) + 1;
+            }
+        }
+
+        const voucherNo = `${prefix}${String(sequence).padStart(3, '0')}`;
+
+        // Update Payments
+        // We assume all selected payments get the SAME voucher number if processed together? 
+        // Requests usually imply a single "Payment Voucher" for a batch to a vendor.
+        const query = `
+            UPDATE job_payments 
+            SET status = 'Paid',
+                voucher_no = $1,
+                bill_ref_no = $2,
+                paid_at = $3,
+                payment_mode = $4,
+                comments = $5,
+                processed_by = $6,
+                updated_at = NOW()
+            WHERE id = ANY($7)
+            RETURNING *
+        `;
+
+        const result = await client.query(query, [
+            voucherNo,
+            reference,
+            paymentDate,
+            paymentMode,
+            comments,
+            processed_by,
+            paymentIds
+        ]);
+
+        await client.query('COMMIT');
+
+        // Audit Log (outside text block for simplicity, or we do it here)
+        // We can do it after response or here. Here is safer.
+        await pool.query(
+            'INSERT INTO audit_logs (user_id, action, details, entity_type, entity_id) VALUES ($1, $2, $3, $4, $5)',
+            [processed_by, 'PROCESS_PAYMENT_BATCH', `Processed ${result.rowCount} payments. Voucher: ${voucherNo}`, 'PAYMENT', 'BATCH']
+        );
+
+        res.json({ message: 'Payments processed successfully', data: result.rows, voucherNo });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Process batch error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    } finally {
+        client.release();
     }
 });
 
