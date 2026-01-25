@@ -2143,7 +2143,7 @@ const ShipmentRegistry: React.FC = () => {
                 />
             )}
 
-            {renderPopup()}
+
 
             <ShipmentInvoiceDrawer
                 isOpen={isInvoiceDrawerOpen}

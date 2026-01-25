@@ -15,7 +15,8 @@ const ShipmentInvoiceDrawer: React.FC<ShipmentInvoiceDrawerProps> = ({ isOpen, o
     const [formData, setFormData] = useState<any>({
         invoice_no: '',
         cargo_type: 'GENERAL',
-        unloaded_date: '',
+        no_of_pkgs: '',
+        customs_r_form: '',
         office: ''
     });
 
@@ -24,7 +25,8 @@ const ShipmentInvoiceDrawer: React.FC<ShipmentInvoiceDrawerProps> = ({ isOpen, o
             setFormData({
                 invoice_no: initialData?.invoice_no || '',
                 cargo_type: initialData?.cargo_type || 'GENERAL',
-                unloaded_date: initialData?.unloaded_date ? new Date(initialData.unloaded_date).toISOString().split('T')[0] : '',
+                no_of_pkgs: initialData?.no_of_pkgs || initialData?.invoice_items || '',
+                customs_r_form: initialData?.customs_r_form || '',
                 office: initialData?.office || ''
             });
         }
@@ -37,7 +39,16 @@ const ShipmentInvoiceDrawer: React.FC<ShipmentInvoiceDrawerProps> = ({ isOpen, o
 
     const handleSubmit = () => {
         onSave(formData);
-        onClose();
+        // Do not close immediately, let parent handle it or close here?
+        // References show parent handles closing usually, but here we can close after save triggering?
+        // Logic in parent closes it? No, handleInvoiceDrawerSave calls setIsInvoiceDrawerOpen(false).
+        // onSave(formData);
+        // onClose(); // Removing explicit close here might depend on parent, usually parent closes. 
+        // But in the existing code it was:
+        // onSave(formData);
+        // onClose();
+        // Since parent refreshes data and closes, we can just call onSave.
+        // Actually, let's keep it safe.
     };
 
     if (!isOpen) return null;
@@ -75,8 +86,8 @@ const ShipmentInvoiceDrawer: React.FC<ShipmentInvoiceDrawerProps> = ({ isOpen, o
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">No. Items*</label>
                                 <input
                                     type="number"
-                                    name="no_of_items"
-                                    value={formData.no_of_items}
+                                    name="no_of_pkgs"
+                                    value={formData.no_of_pkgs}
                                     onChange={handleInputChange}
                                     className="input-field w-full py-2 px-3 border rounded text-sm"
                                 />
@@ -102,7 +113,7 @@ const ShipmentInvoiceDrawer: React.FC<ShipmentInvoiceDrawerProps> = ({ isOpen, o
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Customs R No.</label>
                                 <input
                                     name="customs_r_form"
-                                    value={formData.customs_r_form || ''}
+                                    value={formData.customs_r_form}
                                     onChange={handleInputChange}
                                     className="input-field w-full py-2 px-3 border rounded text-sm"
                                     placeholder=""
