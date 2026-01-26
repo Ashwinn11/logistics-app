@@ -86,6 +86,8 @@ const DeliveryNotes: React.FC = () => {
     // State for split view and tabs
     const [selectedNote, setSelectedNote] = useState<DeliveryNote | null>(null);
     const [activeTab, setActiveTab] = useState<'document' | 'manage'>('manage');
+    const [viewMode, setViewMode] = useState<'list' | 'documents'>('list');
+    const [documentSearchTerm, setDocumentSearchTerm] = useState('');
     const printRef = useRef<HTMLDivElement>(null);
 
     // Update Details State
@@ -106,12 +108,11 @@ const DeliveryNotes: React.FC = () => {
             });
             setFileToUpload(null);
             // Also set document note when opening details
-            setDocumentNote(selectedNote);
+
         }
     }, [selectedNote]);
 
-    const [documentNote, setDocumentNote] = useState<DeliveryNote | null>(null);
-    const [isDocumentPanelOpen, setIsDocumentPanelOpen] = useState(false);
+
 
     const handleSaveDetails = async () => {
         if (!selectedNote) return;
@@ -563,220 +564,320 @@ const DeliveryNotes: React.FC = () => {
             </div>
         </div >
     );
+    const renderDocumentView = () => {
+        // Flatten data for the document view table
+        // We need: Job Number, Consignee, BL/AWB Number, Document Link
+        // Iterate through all notes -> all items
+        const flatData: {
+            jobId: string;
+            consignee: string;
+            exporter: string;
+            driver: string;
+            blAwb: string;
+            documents: { name: string; url: string; }[];
+            noteId: string;
+        }[] = [];
+
+        deliveryNotes.forEach(note => {
+            const documents = note.documents || [];
+            // Driver info is in vehicles
+            const driver = note.vehicles && note.vehicles.length > 0 ? note.vehicles[0].driver : '';
+
+            // If no items, we might still want to show the note? User asked for "Job details".
+            // If there are items, map them.
+            if (note.items && note.items.length > 0) {
+                note.items.forEach(item => {
+                    flatData.push({
+                        jobId: item.job_id,
+                        consignee: note.consignee,
+                        exporter: note.exporter,
+                        driver: driver,
+                        blAwb: item.bl_awb_no || '-',
+                        documents: documents,
+                        noteId: note.id
+                    });
+                });
+            } else {
+                // Should we show a line for the note if it has no items? 
+                // Currently most notes have items. Let's stick to items as primary rows.
+            }
+        });
+
+        // Filter
+        const filteredDocs = flatData.filter(item => {
+            const term = documentSearchTerm.toLowerCase();
+            return (
+                item.jobId.toLowerCase().includes(term) ||
+                item.consignee.toLowerCase().includes(term) ||
+                item.exporter.toLowerCase().includes(term) ||
+                item.driver.toLowerCase().includes(term)
+            );
+        });
+
+        return (
+            <div className="p-8 w-full">
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Delivery notes document</h1>
+                    <p className="text-gray-500">Search and view uploaded delivery documents.</p>
+                </div>
+
+                {/* Search Bar */}
+                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Search by Job #, Consignee, Exporter, Driver..."
+                            className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400 transition-all"
+                            value={documentSearchTerm}
+                            onChange={(e) => setDocumentSearchTerm(e.target.value)}
+                        />
+                    </div>
+                </div>
+
+                {/* Table */}
+                <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-black text-white text-xs uppercase tracking-wider">
+                                <th className="py-4 px-6 font-semibold">Job Number</th>
+                                <th className="py-4 px-6 font-semibold">Consignee</th>
+                                <th className="py-4 px-6 font-semibold">BL / AWB</th>
+                                <th className="py-4 px-6 font-semibold text-right">Document</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {filteredDocs.length === 0 ? (
+                                <tr>
+                                    <td colSpan={4} className="py-8 text-center text-gray-500">No records found</td>
+                                </tr>
+                            ) : (
+                                filteredDocs.map((row, idx) => (
+                                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                                        <td className="py-4 px-6">
+                                            <span className="font-bold text-gray-900 text-sm">{row.jobId}</span>
+                                        </td>
+                                        <td className="py-4 px-6">
+                                            <div className="flex flex-col">
+                                                <span className="font-medium text-gray-900 text-sm">{row.consignee}</span>
+                                                <span className="text-[10px] text-gray-400 uppercase">{row.exporter}</span>
+                                            </div>
+                                        </td>
+                                        <td className="py-4 px-6 text-sm text-gray-600">
+                                            {row.blAwb}
+                                        </td>
+                                        <td className="py-4 px-6 text-right">
+                                            {row.documents.length > 0 ? (
+                                                <div className="flex flex-col items-end gap-1">
+                                                    {row.documents.map((doc, dIdx) => (
+                                                        <a
+                                                            key={dIdx}
+                                                            href={`${FILE_BASE_URL}${doc.url}`}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors text-xs font-medium border border-blue-100"
+                                                        >
+                                                            <FileText className="w-3 h-3" />
+                                                            View Document
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <span className="text-gray-400 text-xs italic">No document</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        );
+    };
 
     return (
         <Layout>
             <div className="flex h-[calc(100vh-100px)] overflow-hidden bg-white">
-                {/* Left Side: The List */}
-                {/* Left Side: The List */}
-                <div className="p-8 overflow-y-auto custom-scrollbar transition-all duration-300 w-full">
-                    {/* Header */}
-                    <div className="mb-8 flex justify-between items-start">
-                        <div>
-                            <h1 className="text-3xl font-bold text-gray-900 mb-2">Issued delivery notes</h1>
-                            <p className="text-gray-500">Overview of all generated delivery notes with quick access to documents.</p>
-                        </div>
-
-                        {/* Red Box Area: Document Section Trigger */}
-                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-1 flex flex-col items-end w-72 transition-all">
+                {viewMode === 'documents' ? (
+                    <div className="w-full h-full overflow-y-auto custom-scrollbar relative">
+                        {/* Back Button for Documents View */}
+                        <div className="absolute top-8 right-8 z-10">
                             <button
-                                onClick={() => setIsDocumentPanelOpen(!isDocumentPanelOpen)}
-                                className="flex items-center justify-between w-full px-4 py-2 text-sm font-bold text-gray-700 hover:bg-white hover:shadow-sm rounded-md transition-all"
+                                onClick={() => setViewMode('list')}
+                                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
                             >
-                                <span className="uppercase text-xs tracking-wider">Documents</span>
-                                <ChevronDown className={`w-4 h-4 transition-transform ${isDocumentPanelOpen ? 'rotate-180' : ''}`} />
+                                Back to List
                             </button>
+                        </div>
+                        {renderDocumentView()}
+                    </div>
+                ) : (
+                    /* Left Side: The List */
+                    <div className="p-8 overflow-y-auto custom-scrollbar transition-all duration-300 w-full">
+                        {/* Header */}
+                        <div className="mb-8 flex justify-between items-start">
+                            <div>
+                                <h1 className="text-3xl font-bold text-gray-900 mb-2">Issued delivery notes</h1>
+                                <p className="text-gray-500">Overview of all generated delivery notes with quick access to documents.</p>
+                            </div>
 
-                            {/* Expandable Document Section */}
-                            {isDocumentPanelOpen && (
-                                <div className="w-full mt-2 p-3 bg-white border border-gray-100 rounded-md shadow-sm animate-in fade-in zoom-in duration-200">
-                                    {documentNote ? (
-                                        <>
-                                            <div className="mb-3 pb-2 border-b border-gray-100 flex justify-between items-center">
-                                                <span className="text-xs font-bold text-blue-600">{documentNote.id}</span>
-                                                <span className="text-[10px] text-gray-400">{documentNote.documents?.length || 0} files</span>
-                                            </div>
-                                            <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
-                                                {documentNote.documents && documentNote.documents.length > 0 ? (
-                                                    documentNote.documents.map((doc, idx) => (
-                                                        <a
-                                                            key={idx}
-                                                            href={`${FILE_BASE_URL}${doc.url}`}
-                                                            target="_blank"
-                                                            rel="noreferrer"
-                                                            className="flex items-center gap-2 p-2 bg-gray-50 rounded hover:bg-blue-50 transition-colors group"
-                                                        >
-                                                            <div className="p-1.5 bg-white rounded border border-gray-200 group-hover:border-blue-200">
-                                                                <FileText className="w-4 h-4 text-blue-500" />
-                                                            </div>
-                                                            <div className="overflow-hidden">
-                                                                <p className="text-xs font-medium text-gray-700 truncate" title={doc.name}>{doc.name}</p>
-                                                                <p className="text-[9px] text-gray-400">{new Date(doc.uploaded_at).toLocaleDateString()}</p>
-                                                            </div>
-                                                        </a>
-                                                    ))
-                                                ) : (
-                                                    <div className="text-center py-4 text-gray-400 italic text-[10px]">
-                                                        No documents
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </>
+                            {/* Document Section Trigger - NOW A VIEW TOGGLE */}
+                            <div className="flex flex-col items-end">
+                                <button
+                                    onClick={() => setViewMode('documents')}
+                                    className="flex items-center gap-2 px-6 py-3 bg-black text-white hover:bg-gray-800 rounded-lg shadow-sm transition-all"
+                                >
+                                    <FileText className="w-4 h-4" />
+                                    <span className="text-sm font-bold uppercase tracking-wide">Documents</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Filters */}
+                        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6">
+                            <div className="flex flex-col md:flex-row gap-6">
+                                <div className="flex-1">
+                                    <label className="block text-xs font-bold text-gray-400 uppercase mb-1 tracking-wider">Search Notes</label>
+                                    <div className="relative">
+                                        <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                                        <input
+                                            type="text"
+                                            placeholder="Search..."
+                                            className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400 transition-all"
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="w-48">
+                                    <label className="block text-xs font-bold text-gray-400 uppercase mb-1 tracking-wider">Records</label>
+                                    <div className="relative">
+                                        <select
+                                            className="w-full pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 appearance-none"
+                                            value={recordsPerPage}
+                                            onChange={(e) => setRecordsPerPage(e.target.value)}
+                                        >
+                                            <option>50 records</option>
+                                            <option>100 records</option>
+                                        </select>
+                                        <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-gray-400 pointer-events-none" />
+                                    </div>
+                                </div>
+                                <div className="w-48">
+                                    <label className="block text-xs font-bold text-gray-400 uppercase mb-1 tracking-wider">Status</label>
+                                    <div className="relative">
+                                        <select
+                                            className="w-full pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 appearance-none"
+                                            value={statusFilter}
+                                            onChange={(e) => setStatusFilter(e.target.value)}
+                                        >
+                                            <option>All statuses</option>
+                                            <option>Pending</option>
+                                            <option>Completed</option>
+                                        </select>
+                                        <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-gray-400 pointer-events-none" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="text-xs text-gray-400 mb-4">Showing {filteredNotes.length} delivery notes</div>
+
+                        {/* Table */}
+                        <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-black text-white text-xs uppercase tracking-wider">
+                                        <th className="py-4 px-6 font-semibold">Delivery</th>
+                                        <th className="py-4 px-6 font-semibold w-1/4">Consignee</th>
+                                        <th className="py-4 px-6 font-semibold">Jobs</th>
+                                        <th className="py-4 px-6 font-semibold">Details</th>
+                                        <th className="py-4 px-6 font-semibold">Issued</th>
+                                        <th className="py-4 px-6 font-semibold">Status</th>
+                                        <th className="py-4 px-6 font-semibold text-right"></th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {loading ? (
+                                        <tr>
+                                            <td colSpan={7} className="py-8 text-center text-gray-500">Loading records...</td>
+                                        </tr>
+                                    ) : filteredNotes.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={7} className="py-8 text-center text-gray-500">No delivery notes found</td>
+                                        </tr>
                                     ) : (
-                                        <div className="text-center py-6 text-gray-400 text-xs">
-                                            Select a delivery note to view documents
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Filters */}
-                    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6">
-                        <div className="flex flex-col md:flex-row gap-6">
-                            <div className="flex-1">
-                                <label className="block text-xs font-bold text-gray-400 uppercase mb-1 tracking-wider">Search Notes</label>
-                                <div className="relative">
-                                    <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                                    <input
-                                        type="text"
-                                        placeholder="Search..."
-                                        className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400 transition-all"
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="w-48">
-                                <label className="block text-xs font-bold text-gray-400 uppercase mb-1 tracking-wider">Records</label>
-                                <div className="relative">
-                                    <select
-                                        className="w-full pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 appearance-none"
-                                        value={recordsPerPage}
-                                        onChange={(e) => setRecordsPerPage(e.target.value)}
-                                    >
-                                        <option>50 records</option>
-                                        <option>100 records</option>
-                                    </select>
-                                    <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-gray-400 pointer-events-none" />
-                                </div>
-                            </div>
-                            <div className="w-48">
-                                <label className="block text-xs font-bold text-gray-400 uppercase mb-1 tracking-wider">Status</label>
-                                <div className="relative">
-                                    <select
-                                        className="w-full pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 appearance-none"
-                                        value={statusFilter}
-                                        onChange={(e) => setStatusFilter(e.target.value)}
-                                    >
-                                        <option>All statuses</option>
-                                        <option>Pending</option>
-                                        <option>Completed</option>
-                                    </select>
-                                    <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-gray-400 pointer-events-none" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="text-xs text-gray-400 mb-4">Showing {filteredNotes.length} delivery notes</div>
-
-                    {/* Table */}
-                    <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-black text-white text-xs uppercase tracking-wider">
-                                    <th className="py-4 px-6 font-semibold">Delivery</th>
-                                    <th className="py-4 px-6 font-semibold w-1/4">Consignee</th>
-                                    <th className="py-4 px-6 font-semibold">Jobs</th>
-                                    <th className="py-4 px-6 font-semibold">Details</th>
-                                    <th className="py-4 px-6 font-semibold">Issued</th>
-                                    <th className="py-4 px-6 font-semibold">Status</th>
-                                    <th className="py-4 px-6 font-semibold text-right"></th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {loading ? (
-                                    <tr>
-                                        <td colSpan={7} className="py-8 text-center text-gray-500">Loading records...</td>
-                                    </tr>
-                                ) : filteredNotes.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={7} className="py-8 text-center text-gray-500">No delivery notes found</td>
-                                    </tr>
-                                ) : (
-                                    filteredNotes.map((note) => (
-                                        <tr key={note.id} className={`hover:bg-gray-50 transition-colors group cursor-pointer ${selectedNote?.id === note.id ? 'bg-blue-50' : ''}`} onClick={() => { handleViewDetails(note); setDocumentNote(note); }}>
-                                            <td className="py-4 px-6">
-                                                <span className="text-blue-600 font-medium text-sm hover:underline">{note.id}</span>
-                                            </td>
-                                            <td className="py-4 px-6">
-                                                <div className="flex flex-col">
-                                                    <span className="font-bold text-gray-900 text-sm mb-0.5">{note.consignee}</span>
-                                                    <span className="text-[11px] text-gray-500 uppercase tracking-wide">{note.exporter}</span>
-                                                </div>
-                                            </td>
-                                            <td className="py-4 px-6">
-                                                <div className="flex flex-wrap gap-1">
-                                                    {note.job_ids?.slice(0, 3).map((job, idx) => (
-                                                        <span key={idx} className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-xs font-medium border border-gray-200">
-                                                            {job}
-                                                        </span>
-                                                    ))}
-                                                    {(note.job_ids?.length || 0) > 3 && (
-                                                        <span className="px-1.5 py-0.5 bg-gray-50 text-gray-500 rounded text-xs font-medium border border-gray-200">
-                                                            +{note.job_ids!.length - 3}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="py-4 px-6">
-                                                <div className="flex items-start gap-3">
-                                                    <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold flex-shrink-0">
-                                                        {note.item_count}
-                                                    </div>
+                                        filteredNotes.map((note) => (
+                                            <tr key={note.id} className={`hover:bg-gray-50 transition-colors group cursor-pointer ${selectedNote?.id === note.id ? 'bg-blue-50' : ''}`} onClick={() => { handleViewDetails(note); }}>
+                                                <td className="py-4 px-6">
+                                                    <span className="text-blue-600 font-medium text-sm hover:underline">{note.id}</span>
+                                                </td>
+                                                <td className="py-4 px-6">
                                                     <div className="flex flex-col">
-                                                        {/* <span className="text-xs font-semibold text-gray-800">BL / AWB</span> */}
-                                                        {/* <span className="inline-block px-2 py-0.5 bg-orange-50 text-orange-700 text-[10px] rounded border border-orange-100 mt-1 uppercase">
+                                                        <span className="font-bold text-gray-900 text-sm mb-0.5">{note.consignee}</span>
+                                                        <span className="text-[11px] text-gray-500 uppercase tracking-wide">{note.exporter}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {note.job_ids?.slice(0, 3).map((job, idx) => (
+                                                            <span key={idx} className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-xs font-medium border border-gray-200">
+                                                                {job}
+                                                            </span>
+                                                        ))}
+                                                        {(note.job_ids?.length || 0) > 3 && (
+                                                            <span className="px-1.5 py-0.5 bg-gray-50 text-gray-500 rounded text-xs font-medium border border-gray-200">
+                                                                +{note.job_ids!.length - 3}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                                                            {note.item_count}
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            {/* <span className="text-xs font-semibold text-gray-800">BL / AWB</span> */}
+                                                            {/* <span className="inline-block px-2 py-0.5 bg-orange-50 text-orange-700 text-[10px] rounded border border-orange-100 mt-1 uppercase">
                                                         Male'
                                                     </span> */}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </td>
-                                            <td className="py-4 px-6">
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm font-medium text-gray-900">{note.issued_date ? new Date(note.issued_date).toLocaleDateString() : '-'}</span>
-                                                    <span className="text-xs text-gray-500">{note.issued_by}</span>
-                                                </div>
-                                            </td>
-                                            <td className="py-4 px-6">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-medium text-gray-900">{note.issued_date ? new Date(note.issued_date).toLocaleDateString() : '-'}</span>
+                                                        <span className="text-xs text-gray-500">{note.issued_by}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
                                                 ${note.status === 'Delivered' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                                                    {note.status}
-                                                </span>
-                                            </td>
-                                            <td className="py-4 px-6 text-right">
-                                                <div className="flex items-center justify-end gap-2 text-gray-400">
+                                                        {note.status}
+                                                    </span>
+                                                </td>
+                                                <td className="py-4 px-6 text-right">
+                                                    <div className="flex items-center justify-end gap-2 text-gray-400">
 
-                                                    <button
-                                                        className="p-1 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                                                        onClick={(e) => { e.stopPropagation(); handleDeleteNote(note.id); }}
-                                                        title="Delete"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )))}
-                            </tbody>
-                        </table>
+                                                        <button
+                                                            className="p-1 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                                            onClick={(e) => { e.stopPropagation(); handleDeleteNote(note.id); }}
+                                                            title="Delete"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
-
-                {/* Modal Overlay */}
+                )}
                 {selectedNote && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                         <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden animate-scale-in">
