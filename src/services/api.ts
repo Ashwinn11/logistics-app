@@ -137,6 +137,7 @@ export const deliveryNotesAPI = {
     }),
     updateStatus: (id: string, status: string) => api.put(`/delivery-notes/${id}/status`, { status }),
     delete: (id: string) => api.delete(`/delivery-notes/${id}`),
+    deleteDocument: (id: string, url: string) => api.delete(`/delivery-notes/${id}/documents`, { data: { url } }),
 };
 
 // Invoices API

@@ -339,6 +339,58 @@ router.put('/:id', authenticateToken, upload.array('files'), async (req, res) =>
     }
 });
 
+// Delete Document from Delivery Note
+router.delete('/:id/documents', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { url } = req.body; // Full relative URL e.g. /uploads/filename.ext
+
+        if (!url) {
+            return res.status(400).json({ error: 'URL is required' });
+        }
+
+        // 1. Fetch existing data
+        const currentRes = await pool.query('SELECT documents FROM delivery_notes WHERE id = $1', [id]);
+        if (currentRes.rows.length === 0) {
+            return res.status(404).json({ error: 'Delivery note not found' });
+        }
+
+        let currentDocs = currentRes.rows[0].documents || [];
+        if (!Array.isArray(currentDocs)) currentDocs = [];
+
+        // 2. Find and Remove from Array
+        const newDocs = currentDocs.filter(doc => doc.url !== url);
+
+        // 3. Delete from Disk
+        // Safe Path Resolution
+        const filename = path.basename(url);
+        const absolutePath = path.join(__dirname, '../uploads', filename);
+
+        console.log(`Deleting file at: ${absolutePath}`);
+
+        if (fs.existsSync(absolutePath)) {
+            try {
+                fs.unlinkSync(absolutePath);
+            } catch (err) {
+                console.error('Failed to delete file from disk:', err);
+                // Continue to remove from DB even if disk delete fails
+            }
+        }
+
+        // 4. Update DB
+        const result = await pool.query(
+            'UPDATE delivery_notes SET documents = $1 WHERE id = $2 RETURNING *',
+            [JSON.stringify(newDocs), id]
+        );
+
+        res.json(result.rows[0]);
+
+    } catch (error) {
+        console.error('Error deleting delivery note document:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Serve Document safely
 router.get('/document/view', authenticateToken, async (req, res) => {
     try {
