@@ -672,7 +672,11 @@ const DeliveryNotes: React.FC = () => {
                                 </tr>
                             ) : (
                                 filteredDocs.map((row, idx) => (
-                                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                                    <tr
+                                        key={idx}
+                                        className="hover:bg-gray-50 transition-colors cursor-pointer"
+                                        onClick={() => handleViewDetails({ id: row.noteId } as any, 'document')}
+                                    >
                                         <td className="py-4 px-6">
                                             <span className="font-bold text-gray-900 text-sm">{row.noteId}</span>
                                         </td>
