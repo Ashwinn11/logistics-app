@@ -662,16 +662,16 @@ router.put('/:id', authenticateToken, async (req, res) => {
              WHERE id = $16
              RETURNING *`,
             [
-                status, progress, driver, vehicle_id,
-                sender_name, sender_address, receiver_name, receiver_address,
-                description, weight, dimensions, price,
-                date, expected_delivery_date, transport_mode,
+                status ?? null, progress ?? null, driver ?? null, vehicle_id ?? null,
+                sender_name ?? null, sender_address ?? null, receiver_name ?? null, receiver_address ?? null,
+                description ?? null, weight ?? null, dimensions ?? null, price ?? null,
+                date ?? null, expected_delivery_date ?? null, transport_mode ?? null,
                 id,
-                invoice_no, invoice_items, customs_r_form, bl_awb_no, container_no, container_type, cbm, no_of_pkgs,
-                expense_macl, expense_mpl, expense_mcs, expense_transportation, expense_liner,
-                house_bl, vessel, delivery_agent,
-                office, cargo_type, unloaded_date,
-                shipment_type, billing_contact, service,
+                invoice_no ?? null, invoice_items ?? null, customs_r_form ?? null, bl_awb_no ?? null, container_no ?? null, container_type ?? null, cbm ?? null, no_of_pkgs ?? null,
+                expense_macl ?? null, expense_mpl ?? null, expense_mcs ?? null, expense_transportation ?? null, expense_liner ?? null,
+                house_bl ?? null, vessel ?? null, delivery_agent ?? null,
+                office ?? null, cargo_type ?? null, unloaded_date ?? null,
+                shipment_type ?? null, billing_contact ?? null, service ?? null,
                 packages ? JSON.stringify(packages) : null
             ]
         );

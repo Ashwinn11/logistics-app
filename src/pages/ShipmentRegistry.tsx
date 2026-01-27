@@ -81,8 +81,12 @@ const ShipmentRegistry: React.FC = () => {
     const handleInvoiceDrawerSave = async (data: any) => {
         try {
             // Include unloaded_date null handling if empty
+            // Sanitize payload
             const payload = {
                 ...data,
+                no_of_pkgs: data.no_of_pkgs ? parseInt(data.no_of_pkgs) : null,
+                invoice_no: data.invoice_no || null,
+                customs_r_form: data.customs_r_form || null,
                 unloaded_date: data.unloaded_date || null
             };
 
