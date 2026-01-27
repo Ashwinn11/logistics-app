@@ -999,20 +999,20 @@ const ShipmentRegistry: React.FC = () => {
     const renderJobDetails = () => {
         if (!selectedJob) return null;
 
-        const isDeliveryNoteIssued = !!selectedJob.delivery_note || (selectedJob.documents && selectedJob.documents.some((d: any) => d.document_type === 'Delivery Note'));
-        const isClearanceComplete = isDeliveryNoteIssued;
-        const isAccountsReady = isClearanceComplete; // Logic: show Send to Account after clearance (delivery note)
+        // Progress Calculations based on Backend Status
+        // Clearance is complete if backend says so (set when all BLs are delivered)
+        const isClearanceComplete = selectedJob.status === 'Cleared' || (selectedJob.progress && parseInt(selectedJob.progress) === 100);
+        const isAccountsReady = isClearanceComplete;
 
-        // Progress Calculations
         const isDocComplete = selectedJob.documents && selectedJob.documents.length > 0;
         const isAccountsComplete = isAccountsReady && (selectedJob.payment_status === 'Paid' || selectedJob.payment_status === 'Approved');
         const isJobCompleted = selectedJob.status === 'Completed';
 
-        let activeStage = 0; // 0: Document, 1: Clearance, 2: Accounts, 3: Completed
-        if (isDocComplete) activeStage = 1; // Documents done, waiting for clearance
-        if (isClearanceComplete) activeStage = 2; // Clearance done, waiting for accounts
-        if (isAccountsComplete) activeStage = 3; // Accounts done
-        if (isJobCompleted) activeStage = 4; // All done
+        let activeStage = 0;
+        if (isDocComplete) activeStage = 1;
+        if (isClearanceComplete) activeStage = 2;
+        if (isAccountsComplete) activeStage = 3;
+        if (isJobCompleted) activeStage = 4;
 
         return (
             <div className="h-full flex flex-col animate-fade-in bg-white font-sans text-gray-900">
@@ -1104,8 +1104,11 @@ const ShipmentRegistry: React.FC = () => {
                         </div>
                         <div>
                             {isAccountsReady ? (
-                                <button className="px-5 py-2.5 bg-black text-white text-sm font-bold rounded-lg flex items-center gap-2 hover:bg-gray-800 transition-colors shadow-lg shadow-gray-200">
-                                    Send to Accounts
+                                <button
+                                    onClick={() => setActiveTab('Payments')}
+                                    className="px-5 py-2.5 bg-black text-white text-sm font-bold rounded-lg flex items-center gap-2 hover:bg-gray-800 transition-colors shadow-lg shadow-gray-200"
+                                >
+                                    Go to Payments
                                 </button>
                             ) : (
                                 <button
@@ -1533,21 +1536,36 @@ const ShipmentRegistry: React.FC = () => {
         const totalCompany = jobPayments.filter(p => p.paid_by === 'Company').reduce((sum, p) => sum + parseFloat(p.amount), 0);
         const totalCustomer = jobPayments.filter(p => p.paid_by === 'Customer').reduce((sum, p) => sum + parseFloat(p.amount), 0);
 
+        const isJobCleared = selectedJob.status === 'Cleared' || (selectedJob.progress && parseInt(selectedJob.progress) === 100);
+
         return (
             <div className="p-8 font-sans">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-lg font-bold text-gray-900">Payments</h3>
                     {jobPayments.some((p: any) => p.status === 'Draft') && (
-                        <button
-                            onClick={handleSendToAccounts}
-                            className="px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-2"
-                        >
-                            <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-200 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-100"></span>
-                            </span>
-                            Send to Accounts ({jobPayments.filter((p: any) => p.status === 'Draft').length})
-                        </button>
+                        <div className="relative group/btn">
+                            <button
+                                onClick={handleSendToAccounts}
+                                disabled={!isJobCleared}
+                                className={`px-4 py-2 text-white font-medium rounded-lg transition-colors shadow-sm flex items-center gap-2 ${isJobCleared
+                                        ? 'bg-indigo-600 hover:bg-indigo-700'
+                                        : 'bg-gray-400 cursor-not-allowed'
+                                    }`}
+                            >
+                                {isJobCleared && (
+                                    <span className="relative flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-200 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-100"></span>
+                                    </span>
+                                )}
+                                Send to Accounts ({jobPayments.filter((p: any) => p.status === 'Draft').length})
+                            </button>
+                            {!isJobCleared && (
+                                <div className="absolute bottom-full mb-2 hidden group-hover/btn:block w-64 p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-10 text-center left-1/2 -translate-x-1/2">
+                                    Delivery Note must be issued for all BLs to complete clearance before sending to accounts.
+                                </div>
+                            )}
+                        </div>
                     )}
                 </div>
 

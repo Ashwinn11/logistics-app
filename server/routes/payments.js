@@ -214,6 +214,25 @@ router.post('/send-batch', authenticateToken, async (req, res) => {
             return res.status(400).json({ error: 'No Start Payment IDs provided' });
         }
 
+        // Validate Job Clearance Status
+        // Payments can only be sent to accounts if the Job is Cleared (progress == 100)
+        const validationQuery = `
+            SELECT DISTINCT s.id, s.progress, s.status, s.customer
+            FROM job_payments jp
+            JOIN shipments s ON jp.job_id = s.id
+            WHERE jp.id = ANY($1)
+        `;
+        const valRes = await pool.query(validationQuery, [paymentIds]);
+
+        const incompleteJobs = valRes.rows.filter(job => job.progress < 100 && job.status !== 'Cleared');
+
+        if (incompleteJobs.length > 0) {
+            const names = incompleteJobs.map(j => `Job ${j.id} (${j.customer})`).join(', ');
+            return res.status(400).json({
+                error: `Cannot send to accounts. The following jobs are not yet cleared: ${names}. Please issue Delivery Notes for all BLs first.`
+            });
+        }
+
         const result = await pool.query(
             "UPDATE job_payments SET status = 'Pending' WHERE id = ANY($1) AND status = 'Draft' RETURNING *",
             [paymentIds]

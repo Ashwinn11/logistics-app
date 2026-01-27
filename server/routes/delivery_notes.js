@@ -124,6 +124,41 @@ router.post('/', authenticateToken, async (req, res) => {
             }
         }
 
+        // UPDATE JOB PROGRESS
+        // Check if all BLs for the job(s) are now delivered
+        const jobIds = [...new Set(items.map(i => i.job_id))];
+        for (const jobId of jobIds) {
+            // 1. Get Total BLs for this Job
+            // We check shipment_bls table. If empty, we fallback to considering the shipment itself as 1 unit (master BL)
+            const blRes = await client.query('SELECT COUNT(*) FROM shipment_bls WHERE shipment_id = $1', [jobId]);
+            let totalBLs = parseInt(blRes.rows[0].count);
+
+            // If no breakdown in shipment_bls, we treat it as 1 main BL (from shipments table)
+            if (totalBLs === 0) totalBLs = 1;
+
+            // 2. Get Delivered BLs for this Job
+            // We count distinct BLs from clearance schedules that are linked to ANY delivery note item
+            const deliveredRes = await client.query(`
+                SELECT COUNT(DISTINCT cs.bl_awb) 
+                FROM delivery_note_items dni
+                JOIN clearance_schedules cs ON dni.schedule_id = cs.id
+                WHERE dni.job_id = $1
+            `, [jobId]);
+            const deliveredBLs = parseInt(deliveredRes.rows[0].count);
+
+            console.log(`Job ${jobId} Progress Check: ${deliveredBLs}/${totalBLs} BLs delivered`);
+
+            // 3. Update Status if Complete
+            if (deliveredBLs >= totalBLs) {
+                await client.query('UPDATE shipments SET progress = 100, status = $1 WHERE id = $2', ['Cleared', jobId]);
+            } else {
+                // Optional: Set partial progress? e.g. (delivered / total) * 100
+                // preserving 'status' might be better if not complete, or set to 'In Clearance'
+                const percent = Math.floor((deliveredBLs / totalBLs) * 100);
+                await client.query('UPDATE shipments SET progress = $1 WHERE id = $2', [percent, jobId]);
+            }
+        }
+
         await client.query('COMMIT');
         res.status(201).json({ id: dnId, message: 'Delivery Note Created Successfully' });
 
