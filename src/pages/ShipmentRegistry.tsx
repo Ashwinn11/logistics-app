@@ -172,7 +172,8 @@ const ShipmentRegistry: React.FC = () => {
                 etd: data.etd,
                 eta: data.eta,
                 delivery_agent: data.delivery_agent,
-                packages: data.packages || []
+                packages: data.packages || [],
+                containers: data.containers || []
             };
 
             if (data.id) {
@@ -1351,26 +1352,38 @@ const ShipmentRegistry: React.FC = () => {
                                         {/* Packages List */}
                                         <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
                                             <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Packages Breakdown</h4>
-                                            {bl.packages && bl.packages.length > 0 ? (
-                                                <div className="space-y-3">
-                                                    {/* Header Row */}
-                                                    <div className="grid grid-cols-3 gap-4 pb-2 border-b border-gray-200">
-                                                        <div className="text-xs font-bold text-gray-500 uppercase">Count</div>
-                                                        <div className="text-xs font-bold text-gray-500 uppercase">CBM</div>
-                                                        <div className="text-xs font-bold text-gray-500 uppercase">Type</div>
-                                                    </div>
-                                                    {/* Items */}
-                                                    {bl.packages.map((pkg: any, idx: number) => (
-                                                        <div key={idx} className="grid grid-cols-3 gap-4 items-center">
-                                                            <div className="font-bold text-gray-900 text-sm">{pkg.pkg_count || 0}</div>
-                                                            <div className="font-medium text-gray-700 text-sm">{pkg.cbm || '-'}</div>
-                                                            <div className="font-bold text-gray-900 text-sm uppercase">{pkg.pkg_type || '-'}</div>
+                                            {(() => {
+                                                let displayPackages = bl.packages || [];
+                                                // Check for nested container structure
+                                                if (displayPackages.length > 0 && displayPackages[0].container_no) {
+                                                    displayPackages = displayPackages.flatMap((c: any) =>
+                                                        typeof c.packages === 'string' ? JSON.parse(c.packages) : (c.packages || [])
+                                                    );
+                                                }
+
+                                                if (displayPackages.length > 0) {
+                                                    return (
+                                                        <div className="space-y-3">
+                                                            {/* Header Row */}
+                                                            <div className="grid grid-cols-3 gap-4 pb-2 border-b border-gray-200">
+                                                                <div className="text-xs font-bold text-gray-500 uppercase">Count</div>
+                                                                <div className="text-xs font-bold text-gray-500 uppercase">CBM</div>
+                                                                <div className="text-xs font-bold text-gray-500 uppercase">Type</div>
+                                                            </div>
+                                                            {/* Items */}
+                                                            {displayPackages.map((pkg: any, idx: number) => (
+                                                                <div key={idx} className="grid grid-cols-3 gap-4 items-center">
+                                                                    <div className="font-bold text-gray-900 text-sm">{pkg.pkg_count || 0}</div>
+                                                                    <div className="font-medium text-gray-700 text-sm">{pkg.cbm || (pkg.weight ? `${pkg.weight} KG` : '-')}</div>
+                                                                    <div className="font-bold text-gray-900 text-sm uppercase">{pkg.pkg_type || 'PKG'}</div>
+                                                                </div>
+                                                            ))}
                                                         </div>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <p className="text-sm text-gray-400 italic">No package details specified</p>
-                                            )}
+                                                    );
+                                                } else {
+                                                    return <p className="text-sm text-gray-400 italic">No package details specified</p>;
+                                                }
+                                            })()}
                                         </div>
                                     </div>
                                 ))
@@ -1994,7 +2007,12 @@ const ShipmentRegistry: React.FC = () => {
                 onSave={handleBLDrawerSave}
                 initialData={{
                     ...newBL,
-                    packages: (newBL.packages && newBL.packages.length > 0)
+                    // If packages col has container structure, map to containers prop
+                    containers: (newBL.packages && newBL.packages.length > 0 && newBL.packages[0].container_no)
+                        ? newBL.packages
+                        : [],
+                    // If packages col has flat structure, map to packages prop. Else fallback to Job packages
+                    packages: (newBL.packages && newBL.packages.length > 0 && !newBL.packages[0].container_no)
                         ? newBL.packages
                         : (selectedJob?.packages?.map((p: any) => ({
                             pkg_count: p.count,
