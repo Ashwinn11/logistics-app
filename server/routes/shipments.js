@@ -611,6 +611,9 @@ router.put('/:id', authenticateToken, async (req, res) => {
             packages
         } = req.body;
 
+        console.log(`[DEBUG] Updating shipment ${id}`, req.body);
+
+
         await pool.query('BEGIN');
 
         // Update Job Invoice ID if provided

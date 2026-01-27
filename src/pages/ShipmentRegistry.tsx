@@ -90,6 +90,8 @@ const ShipmentRegistry: React.FC = () => {
                 unloaded_date: data.unloaded_date || null
             };
 
+            console.log('[DEBUG] Invoice Payload:', payload);
+
             await shipmentsAPI.update(selectedJob.id, payload);
 
             // Instant Refresh
