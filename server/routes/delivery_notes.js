@@ -6,6 +6,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { logActivity } from '../utils/logger.js';
+import { broadcastToAll } from '../utils/notify.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -151,7 +152,20 @@ router.post('/', authenticateToken, async (req, res) => {
 
             // 3. Update Status if Complete
             if (deliveredBLs >= totalBLs) {
-                await client.query('UPDATE shipments SET progress = 100, status = $1 WHERE id = $2', ['Pending', jobId]);
+                // Check if Payments are fully paid
+                const payRes = await client.query("SELECT count(*) FROM job_payments WHERE job_id = $1 AND status != 'Paid'", [jobId]);
+                const pendingPayments = parseInt(payRes.rows[0].count);
+
+                if (pendingPayments === 0) {
+                    // Fully Cleared AND Fully Paid -> Completed
+                    await client.query('UPDATE shipments SET progress = 100, status = $1 WHERE id = $2', ['Completed', jobId]);
+                    try {
+                        await broadcastToAll('Job Completed', `Job ${jobId} is fully cleared and paid. Process Complete.`, 'success', `/registry?id=${jobId}`);
+                    } catch (ne) { console.error(ne); }
+                } else {
+                    // Just Cleared
+                    await client.query('UPDATE shipments SET progress = 100, status = $1 WHERE id = $2', ['Pending', jobId]);
+                }
             } else {
                 // Optional: Set partial progress? e.g. (delivered / total) * 100
                 // preserving 'status' might be better if not complete, or set to 'In Clearance'

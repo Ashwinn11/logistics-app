@@ -244,4 +244,11 @@ export const containersAPI = {
     getAll: (params?: { search?: string; page?: number; limit?: number }) => api.get('/containers', { params }),
 };
 
+// Notifications API
+export const notificationsAPI = {
+    getAll: () => api.get('/notifications'),
+    markRead: (id: number) => api.put(`/notifications/${id}/read`),
+    markAllRead: () => api.put('/notifications/read-all'),
+};
+
 export default api;

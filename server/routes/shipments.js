@@ -8,6 +8,7 @@ import fs from 'fs';
 import { generateInvoicePDF } from '../utils/invoiceGenerator.js';
 import XLSX from 'xlsx';
 import { logActivity } from '../utils/logger.js';
+import { broadcastNotification, createNotification } from '../utils/notify.js';
 
 
 const router = express.Router();
@@ -592,6 +593,17 @@ router.post('/', authenticateToken, shipmentUpload, async (req, res) => {
         await logActivity(req.user.id, 'CREATE_SHIPMENT', `Created shipment ${id}`, 'SHIPMENT', id);
 
         await pool.query('COMMIT');
+
+        // Notifications
+        try {
+            // Notify Admins
+            await broadcastNotification('Administrator', 'New Job Created', `A new job ${id} has been created by ${req.user.username}.`, 'info', `/registry?id=${id}`);
+
+            // Notify Creator
+            await createNotification(req.user.id, 'Job Created Successfully', `You created job ${id}.`, 'success', `/registry?id=${id}`);
+        } catch (noteError) {
+            console.error('Notification error:', noteError);
+        }
 
         res.status(201).json(shipmentResult.rows[0]);
     } catch (error) {

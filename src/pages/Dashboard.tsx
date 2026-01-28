@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
-import { analyticsAPI, shipmentsAPI } from '../services/api';
+import { analyticsAPI, shipmentsAPI, notificationsAPI } from '../services/api';
 import {
     Package,
     Clock,
@@ -9,7 +9,10 @@ import {
     AlertCircle,
     Loader2,
     Users,
-    ScrollText
+    ScrollText,
+    User,
+    Bell,
+    UserSearch
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -21,6 +24,9 @@ const Dashboard: React.FC = () => {
     const [data, setData] = useState<any>(null);
     const [originalData, setOriginalData] = useState<any>(null);
     const [viewingAll, setViewingAll] = useState(false);
+    const [notifications, setNotifications] = useState<any[]>([]);
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -28,6 +34,10 @@ const Dashboard: React.FC = () => {
                 const response = await analyticsAPI.getDashboard();
                 setData(response.data);
                 setOriginalData(response.data);
+
+                const notifResponse = await notificationsAPI.getAll();
+                setNotifications(notifResponse.data);
+                setUnreadCount(notifResponse.data.filter((n: any) => !n.is_read).length);
             } catch (error) {
                 console.error('Error fetching dashboard data:', error);
             } finally {
@@ -123,12 +133,98 @@ const Dashboard: React.FC = () => {
         <Layout>
             <div className="space-y-6 animate-fade-in">
                 {/* Page Header */}
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-                    <p className="text-gray-600 mt-1">Welcome back! Here's what's happening today.</p>
+                {/* Page Header */}
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="w-15 h-15 rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center border-2 border-white shadow-md flex-shrink-0">
+                            {user?.photo_url ? (
+                                <img
+                                    src={user.photo_url.startsWith('http') ? user.photo_url : `${import.meta.env.MODE === 'production' ? '' : 'http://localhost:5001'}${user.photo_url}`}
+                                    alt="Profile"
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <span className="text-white text-lg font-bold">
+                                    {user?.username ? user.username.charAt(0).toUpperCase() : <User className="w-6 h-6 text-white" />}
+                                </span>
+                            )}
+                        </div>
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+                            <p className="text-gray-600 mt-1">Welcome back <span className="font-semibold text-indigo-600">{user?.username}</span>! Here's what's happening today.</p>
+                        </div>
+                    </div>
+                    {/* Notifications */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowNotifications(!showNotifications)}
+                            className="p-2 rounded-lg hover:bg-white hover:shadow-sm transition-all relative group"
+                        >
+                            <Bell className={`w-6 h-6 transition-colors ${showNotifications ? 'text-indigo-600' : 'text-gray-400 group-hover:text-indigo-600'}`} />
+                            {unreadCount > 0 && (
+                                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-gray-50"></span>
+                            )}
+                        </button>
+
+                        {/* Notification Dropdown */}
+                        {showNotifications && (
+                            <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50 animate-in fade-in slide-in-from-top-2">
+                                <div className="p-4 border-b border-gray-50 flex justify-between items-center">
+                                    <h3 className="font-semibold text-gray-900">Notifications</h3>
+                                    {unreadCount > 0 && (
+                                        <button
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
+                                                await notificationsAPI.markAllRead();
+                                                setNotifications(notifications.map(n => ({ ...n, is_read: true })));
+                                                setUnreadCount(0);
+                                            }}
+                                            className="text-xs text-indigo-600 hover:text-indigo-700"
+                                        >
+                                            Mark all read
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="max-h-96 overflow-y-auto">
+                                    {notifications.length === 0 ? (
+                                        <div className="p-8 text-center text-gray-500">
+                                            <Bell className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                                            <p className="text-sm">No notifications</p>
+                                        </div>
+                                    ) : (
+                                        <div className="divide-y divide-gray-50">
+                                            {notifications.map((notif: any) => (
+                                                <div
+                                                    key={notif.id}
+                                                    className={`p-4 hover:bg-gray-50 transition-colors ${!notif.is_read ? 'bg-indigo-50/30' : ''}`}
+                                                >
+                                                    <div className="flex gap-3">
+                                                        <div className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${!notif.is_read ? 'bg-indigo-500' : 'bg-transparent'}`} />
+                                                        <div>
+                                                            <p className="text-sm font-medium text-gray-900">{notif.title}</p>
+                                                            <p className="text-sm text-gray-600 mt-1">{notif.message}</p>
+                                                            <div className="flex items-center gap-2 mt-2">
+                                                                <span className="text-xs text-gray-400">
+                                                                    {new Date(notif.created_at).toLocaleDateString()}
+                                                                </span>
+                                                                {notif.link && (
+                                                                    <Link to={notif.link} className="text-xs text-indigo-600 hover:underline">
+                                                                        View Details
+                                                                    </Link>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                {/* Stats Grid */}
                 {/* Stats Grid */}
                 <div className="space-y-8">
                     {/* Team Snapshot */}
@@ -186,13 +282,13 @@ const Dashboard: React.FC = () => {
                                 <h3 className="font-bold text-gray-900">Container Tracking</h3>
                                 <p className="text-xs text-gray-500 mt-1">Monitor port status</p>
                             </Link>
-                            <div className="glass-card p-6 hover:shadow-lg transition-all cursor-pointer group flex flex-col items-center text-center">
+                            <Link to="/settings" className="glass-card p-6 hover:shadow-lg transition-all cursor-pointer group flex flex-col items-center text-center">
                                 <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-3 group-hover:bg-purple-600 group-hover:text-white transition-colors">
-                                    <Users className="w-6 h-6" />
+                                    <UserSearch className="w-6 h-6" />
                                 </div>
-                                <h3 className="font-bold text-gray-900">Client Updates</h3>
-                                <p className="text-xs text-gray-500 mt-1">Send status pings</p>
-                            </div>
+                                <h3 className="font-bold text-gray-900">Information Updates</h3>
+                                <p className="text-xs text-gray-500 mt-1">Manage Information</p>
+                            </Link>
                         </div>
                     </div>
                 </div>
@@ -214,16 +310,36 @@ const Dashboard: React.FC = () => {
 
                 {/* System Activity Section - Visible to All */}
                 <div className="mb-6">
-                    <Link to="/logs" className="glass-card p-6 flex items-center justify-between hover:shadow-xl transition-all cursor-pointer group">
-                        <div>
-                            <h3 className="text-lg font-bold text-gray-900 mb-1">Audit Logs</h3>
-                            <p className="text-sm text-gray-600">View system activities and track changes</p>
+                    {user?.role === 'Administrator' ? (
+                        <Link to="/logs" className="glass-card p-6 flex items-center justify-between hover:shadow-xl transition-all cursor-pointer group">
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900 mb-1">Audit Logs</h3>
+                                <p className="text-sm text-gray-600">View system activities and track changes</p>
+                            </div>
+                            <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center group-hover:bg-orange-600 transition-colors">
+                                <ScrollText className="w-6 h-6 text-orange-600 group-hover:text-white transition-colors" />
+                            </div>
+                        </Link>
+                    ) : (
+                        <div
+                            onClick={() => {
+                                if (window.confirm("Access Restricted. You need Administrator permission to view Audit Logs.\n\nWould you like to send an access request to the Admin?")) {
+                                    alert("Access request sent successfully!");
+                                }
+                            }}
+                            className="glass-card p-6 flex items-center justify-between hover:shadow-xl transition-all cursor-pointer group"
+                        >
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900 mb-1">Audit Logs</h3>
+                                <p className="text-sm text-gray-600">View system activities and track changes</p>
+                            </div>
+                            <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center group-hover:bg-orange-600 transition-colors">
+                                <ScrollText className="w-6 h-6 text-orange-600 group-hover:text-white transition-colors" />
+                            </div>
                         </div>
-                        <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center group-hover:bg-orange-600 transition-colors">
-                            <ScrollText className="w-6 h-6 text-orange-600 group-hover:text-white transition-colors" />
-                        </div>
-                    </Link>
+                    )}
                 </div>
+
 
                 {/* Clearance Agent Actions */}
                 {(user?.role === 'Clearance Agent' || user?.role === 'Administrator') && (
@@ -257,7 +373,7 @@ const Dashboard: React.FC = () => {
                                 <tr className="border-b border-gray-200">
                                     <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Shipment ID</th>
                                     <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Customer</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Destination</th>
+
                                     <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Status</th>
                                     <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Date & Time</th>
                                 </tr>
@@ -269,7 +385,7 @@ const Dashboard: React.FC = () => {
                                             <span className="font-mono text-sm font-semibold text-primary-700">{shipment.id}</span>
                                         </td>
                                         <td className="py-4 px-4 text-sm text-gray-900">{shipment.customer}</td>
-                                        <td className="py-4 px-4 text-sm text-gray-600">{shipment.destination}</td>
+
                                         <td className="py-4 px-4">
                                             <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(shipment.status)}`}>
                                                 {getStatusIcon(shipment.status)}

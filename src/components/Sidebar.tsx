@@ -3,7 +3,6 @@ import { NavLink } from 'react-router-dom';
 import {
     LayoutDashboard,
     X,
-    PackageCheck,
     Users,
     ScrollText,
     FileText,
@@ -12,9 +11,12 @@ import {
     Settings,
     Container,
     ClipboardList,
-    CreditCard
+    CreditCard,
+    LogOut
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import seaflowLogo from '../assets/seaflow-logo.jpg';
+import { useNavigate } from 'react-router-dom';
 
 interface SidebarProps {
     isOpen: boolean;
@@ -22,7 +24,13 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        logout();
+        navigate('/');
+    };
     const userRole = user?.role || '';
     const isAdministrator = userRole === 'Administrator';
     const isClearance = ['Clearance Manager', 'Clearance Manager Assistant', 'Clearance Agent', 'Accountant', 'Accountant Assistant'].includes(userRole);
@@ -87,8 +95,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     {/* Logo */}
                     <div className="flex items-center justify-between p-6 border-b border-white/20">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-accent-600 rounded-xl flex items-center justify-center shadow-lg">
-                                <img src="./assets/seaflow-logo.jpg" className="w-6 h-6 text-white" />
+                            <div className="w-10 h-10 flex items-center justify-center">
+                                <img src={seaflowLogo} alt="Seaflow Logistics" className="w-full h-full object-contain rounded-xl" />
                             </div>
                             <span className="text-xl font-bold bg-gradient-to-r from-primary-700 to-accent-700 bg-clip-text text-transparent">
                                 Seaflow Logistics
@@ -141,6 +149,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                             <UserCircle className="w-5 h-5" />
                             <span className="font-medium">Profile</span>
                         </NavLink>
+
+                        {/* User Info & Logout */}
+                        <div className="mt-4 pt-4 border-t border-white/10">
+                            <div className="flex items-center gap-3 mb-3 px-2">
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-bold text-gray-800 truncate">{user?.username}</p>
+                                    <p className="text-xs text-gray-500 truncate">{user?.role}</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={handleLogout}
+                                className="w-full flex items-center gap-3 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            >
+                                <LogOut className="w-5 h-5" />
+                                <span className="font-medium">Logout</span>
+                            </button>
+                        </div>
 
                         <div className="glass-card p-4">
                             <p className="text-xs text-gray-600 mb-1">Version 1.0.0</p>
