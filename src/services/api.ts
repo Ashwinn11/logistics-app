@@ -122,7 +122,7 @@ export const usersAPI = {
 
 // Logs API
 export const logsAPI = {
-    getAll: (params?: { search?: string; date?: string }) =>
+    getAll: (params?: { search?: string; date?: string; entity_id?: string; entity_type?: string }) =>
         api.get('/logs', { params }),
 };
 

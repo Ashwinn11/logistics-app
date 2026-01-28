@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
-import { shipmentsAPI, consigneesAPI, exportersAPI, clearanceAPI, deliveryAgentsAPI, vendorsAPI, paymentsAPI, paymentItemsAPI } from '../services/api';
+import { shipmentsAPI, consigneesAPI, exportersAPI, clearanceAPI, deliveryAgentsAPI, vendorsAPI, paymentsAPI, paymentItemsAPI, logsAPI } from '../services/api';
 import {
     Search, Plus,
     FileText,
@@ -60,6 +60,7 @@ const ShipmentRegistry: React.FC = () => {
     const [editFormData, setEditFormData] = useState<any>({});
     const [previewDoc, setPreviewDoc] = useState<any | null>(null);
     const [openMenu, setOpenMenu] = useState<string | null>(null);
+    const [historyLogs, setHistoryLogs] = useState<any[]>([]);
 
     // Drawer State
     const [isBLDrawerOpen, setIsBLDrawerOpen] = useState(false);
@@ -303,6 +304,11 @@ const ShipmentRegistry: React.FC = () => {
     useEffect(() => {
         if (selectedJob && activeTab === 'Payments') {
             loadPayments(selectedJob.id);
+        }
+        if (selectedJob && activeTab === 'History') {
+            logsAPI.getAll({ entity_id: selectedJob.id, entity_type: 'SHIPMENT' })
+                .then(res => setHistoryLogs(res.data))
+                .catch(err => console.error("Failed to load history", err));
         }
     }, [selectedJob?.id, activeTab]);
 
@@ -1609,7 +1615,7 @@ const ShipmentRegistry: React.FC = () => {
 
                     {activeTab === 'Documents' && renderDocumentsTab()}
                     {activeTab === 'Payments' && renderPaymentsTab()}
-                    {activeTab === 'History' && <div className="p-12 text-center text-gray-400 italic">History module coming soon...</div>}
+                    {activeTab === 'History' && renderHistoryTab()}
 
                 </div>
             </div >
@@ -1744,6 +1750,50 @@ const ShipmentRegistry: React.FC = () => {
                 </div>
             </div>
         );
+    };
+
+    const renderHistoryTab = () => {
+        return (
+            <div className="p-8">
+                <h3 className="text-lg font-bold text-gray-900 mb-6">Activity</h3>
+                <div className="relative border-l-2 border-gray-100 ml-3 space-y-8">
+                    {historyLogs.map((log) => {
+                        let Icon = FileText;
+                        let colorClass = "text-gray-400 bg-gray-50";
+                        // Mapping Action to Icons/Colors
+                        if (log.action.includes('CREATE_SHIPMENT')) { Icon = FileText; colorClass = "text-green-600 bg-green-50"; }
+                        else if (log.action.includes('DOC')) { Icon = UploadCloud; colorClass = "text-blue-600 bg-blue-50"; }
+                        else if (log.action.includes('INVOICE')) { Icon = FileText; colorClass = "text-purple-600 bg-purple-50"; }
+                        else if (log.action.includes('BL')) { Icon = FileSpreadsheet; colorClass = "text-indigo-600 bg-indigo-50"; }
+                        else if (log.action.includes('CLEARANCE')) { Icon = Check; colorClass = "text-emerald-600 bg-emerald-50"; }
+                        else if (log.action.includes('PAYMENT')) { Icon = CreditCard; colorClass = "text-amber-600 bg-amber-50"; }
+                        else if (log.action.includes('COMPLETED')) { Icon = Check; colorClass = "text-green-600 bg-green-100"; }
+
+                        return (
+                            <div key={log.id} className="relative pl-8">
+                                <span className={`absolute -left-[11px] top-0 p-1 rounded-full border border-white ring-2 ring-white ${colorClass}`}>
+                                    <Icon className="w-3 h-3" />
+                                </span>
+                                <div>
+                                    <p className="text-sm font-bold text-gray-900">
+                                        {formatAction(log.action)} <span className="font-normal text-gray-500">by {log.performed_by}</span>
+                                    </p>
+                                    <p className="text-xs text-gray-400 mt-0.5">{new Date(log.created_at).toLocaleString()}</p>
+                                    {log.details && <p className="text-xs text-gray-500 mt-1">{log.details}</p>}
+                                </div>
+                            </div>
+                        );
+                    })}
+                    {historyLogs.length === 0 && (
+                        <p className="text-sm text-gray-400 pl-8">No activity recorded yet.</p>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    const formatAction = (action: string) => {
+        return action.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
     };
 
     const handlePopupSave = async (data: any = {}) => {

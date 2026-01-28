@@ -30,6 +30,16 @@ router.get('/', async (req, res) => {
             params.push(date);
         }
 
+        if (req.query.entity_id) {
+            conditions.push(`a.entity_id = $${params.length + 1}`);
+            params.push(req.query.entity_id);
+        }
+
+        if (req.query.entity_type) {
+            conditions.push(`a.entity_type = $${params.length + 1}`);
+            params.push(req.query.entity_type);
+        }
+
         if (conditions.length > 0) {
             query += ' WHERE ' + conditions.join(' AND ');
         }

@@ -193,10 +193,12 @@ router.post('/', authenticateToken, async (req, res) => {
         );
 
         // Optional: Create audit log
+        // Log for Job History
         await pool.query(
             'INSERT INTO audit_logs (user_id, action, details, entity_type, entity_id) VALUES ($1, $2, $3, $4, $5)',
-            [req.user.id, 'CREATE_PAYMENT', `Created payment ${payment_type} of ${amount}`, 'PAYMENT', result.rows[0].id]
+            [req.user.id, 'PAYMENT_REQUEST', `Payment Request created`, 'SHIPMENT', job_id]
         );
+
 
         res.status(201).json(result.rows[0]);
     } catch (error) {
@@ -327,10 +329,14 @@ router.post('/process-batch', authenticateToken, async (req, res) => {
 
         // Audit Log (outside text block for simplicity, or we do it here)
         // We can do it after response or here. Here is safer.
-        await pool.query(
-            'INSERT INTO audit_logs (user_id, action, details, entity_type, entity_id) VALUES ($1, $2, $3, $4, $5)',
-            [processed_by, 'PROCESS_PAYMENT_BATCH', `Processed ${result.rowCount} payments. Voucher: ${voucherNo}`, 'PAYMENT', 'BATCH']
-        );
+        // Audit Log per Job
+        const distinctJobIds = [...new Set(result.rows.map(p => p.job_id))];
+        for (const jId of distinctJobIds) {
+            await pool.query(
+                'INSERT INTO audit_logs (user_id, action, details, entity_type, entity_id) VALUES ($1, $2, $3, $4, $5)',
+                [processed_by, 'PAYMENT_PROCESSED', `Payments processed (Voucher: ${voucherNo})`, 'SHIPMENT', jId]
+            );
+        }
 
         res.json({ message: 'Payments processed successfully', data: result.rows, voucherNo });
     } catch (error) {

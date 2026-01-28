@@ -5,6 +5,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import { logActivity } from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -157,6 +158,11 @@ router.post('/', authenticateToken, async (req, res) => {
                 const percent = Math.floor((deliveredBLs / totalBLs) * 100);
                 await client.query('UPDATE shipments SET progress = $1 WHERE id = $2', [percent, jobId]);
             }
+        }
+
+        // Log Activities
+        for (const jId of jobIds) {
+            await logActivity(req.user.id, 'CLEARANCE', `Clearance (Delivery Note ${dnId} issued)`, 'SHIPMENT', jId);
         }
 
         await client.query('COMMIT');

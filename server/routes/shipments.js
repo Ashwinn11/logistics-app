@@ -423,7 +423,9 @@ router.post('/:id/bls', authenticateToken, async (req, res) => {
             }
         }
 
-        res.json(result.rows[0]);
+        await logActivity(req.user.id, 'ADD_BL', `Added BL/AWB ${req.body.master_bl || ''}`, 'SHIPMENT', id);
+
+        res.status(201).json(result.rows[0]);
     } catch (e) {
         console.error(e);
         res.status(500).json({ error: e.message });
@@ -465,6 +467,8 @@ router.put('/:id/bls/:blId', authenticateToken, async (req, res) => {
                 }
             }
         }
+
+        await logActivity(req.user.id, 'UPDATE_BL', `Updated BL/AWB ${req.body.master_bl || ''}`, 'SHIPMENT', id);
 
         res.json(result.rows[0]);
     } catch (e) {
@@ -718,8 +722,17 @@ router.put('/:id', authenticateToken, async (req, res) => {
             }
         }
 
-        // Log action
-        await logActivity(req.user.id, 'UPDATE_SHIPMENT', `Updated shipment ${id}`, 'SHIPMENT', id);
+        // Specific Activity Logging
+        if (req.body.status === 'Completed') {
+            await logActivity(req.user.id, 'JOB_COMPLETED', `Job marked as Completed`, 'SHIPMENT', id);
+        } else if (req.body.invoice_no) {
+            // Heuristic: If invoice_no is being sent, it's likely a Shipment Invoice update
+            await logActivity(req.user.id, 'UPDATE_SHIPMENT_INVOICE', `Shipment Invoice ${req.body.invoice_no} details updated`, 'SHIPMENT', id);
+        } else if (req.body.job_invoice_no) {
+            await logActivity(req.user.id, 'UPDATE_JOB_INVOICE', `Job Invoice ${req.body.job_invoice_no} details updated`, 'SHIPMENT', id);
+        } else {
+            await logActivity(req.user.id, 'UPDATE_SHIPMENT', `Updated shipment details`, 'SHIPMENT', id);
+        }
 
         await pool.query('COMMIT');
         res.json(updatedShipment);
