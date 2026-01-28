@@ -1061,9 +1061,27 @@ const ShipmentRegistry: React.FC = () => {
         if (isJobCompleted) activeStage = 4;
 
         const handleMarkCompleted = async () => {
-            if (!window.confirm('Are you sure you want to mark this job as fully COMPLETED?')) return;
+            let jobInvoice = selectedJob.job_invoice_no;
+
+            if (!jobInvoice) {
+                const input = window.prompt("Job Invoice Number is required to complete the job. Please enter it below:");
+                if (input === null) return; // Cancelled
+                if (!input.trim()) {
+                    alert("Job Invoice Number cannot be empty.");
+                    return;
+                }
+                jobInvoice = input.trim();
+            } else {
+                if (!window.confirm('Are you sure you want to mark this job as fully COMPLETED?')) return;
+            }
+
             try {
-                await shipmentsAPI.update(selectedJob.id, { status: 'Completed' });
+                // Update both status and job_invoice_no (if it was just entered)
+                await shipmentsAPI.update(selectedJob.id, {
+                    status: 'Completed',
+                    job_invoice_no: jobInvoice
+                });
+
                 // Refresh
                 const res = await shipmentsAPI.getById(selectedJob.id);
                 setSelectedJob(res.data);
@@ -1160,6 +1178,12 @@ const ShipmentRegistry: React.FC = () => {
                             <div>
                                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Service</p>
                                 <p className="font-bold text-xl text-gray-900">{selectedJob.service || 'Clearance'}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Job Invoice</p>
+                                <p className={`font-bold text-xl ${selectedJob.job_invoice_no ? 'text-gray-900' : 'text-gray-300 italic'}`}>
+                                    {selectedJob.job_invoice_no || 'Pending'}
+                                </p>
                             </div>
                         </div>
                         <div>
