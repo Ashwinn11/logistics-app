@@ -9,7 +9,8 @@ import {
     AlertCircle,
     Loader2,
     Users,
-    ScrollText
+    ScrollText,
+    UserSearch,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -125,7 +126,7 @@ const Dashboard: React.FC = () => {
                 {/* Page Header */}
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-                    <p className="text-gray-600 mt-1">Welcome back! Here's what's happening today.</p>
+                    <p className="text-gray-600 mt-1">Welcome back <span className="font-semibold text-indigo-600">{user?.username}</span>! Here's what's happening today.</p>
                 </div>
 
                 {/* Stats Grid */}
@@ -186,13 +187,13 @@ const Dashboard: React.FC = () => {
                                 <h3 className="font-bold text-gray-900">Container Tracking</h3>
                                 <p className="text-xs text-gray-500 mt-1">Monitor port status</p>
                             </Link>
-                            <div className="glass-card p-6 hover:shadow-lg transition-all cursor-pointer group flex flex-col items-center text-center">
+                            <Link to="/settings" className="glass-card p-6 hover:shadow-lg transition-all cursor-pointer group flex flex-col items-center text-center">
                                 <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-3 group-hover:bg-purple-600 group-hover:text-white transition-colors">
-                                    <Users className="w-6 h-6" />
+                                    <UserSearch className="w-6 h-6" />
                                 </div>
-                                <h3 className="font-bold text-gray-900">Client Updates</h3>
-                                <p className="text-xs text-gray-500 mt-1">Send status pings</p>
-                            </div>
+                                <h3 className="font-bold text-gray-900">Information Updates</h3>
+                                <p className="text-xs text-gray-500 mt-1">Manage Information</p>
+                            </Link>
                         </div>
                     </div>
                 </div>
@@ -214,16 +215,36 @@ const Dashboard: React.FC = () => {
 
                 {/* System Activity Section - Visible to All */}
                 <div className="mb-6">
-                    <Link to="/logs" className="glass-card p-6 flex items-center justify-between hover:shadow-xl transition-all cursor-pointer group">
-                        <div>
-                            <h3 className="text-lg font-bold text-gray-900 mb-1">Audit Logs</h3>
-                            <p className="text-sm text-gray-600">View system activities and track changes</p>
+                    {user?.role === 'Administrator' ? (
+                        <Link to="/logs" className="glass-card p-6 flex items-center justify-between hover:shadow-xl transition-all cursor-pointer group">
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900 mb-1">Audit Logs</h3>
+                                <p className="text-sm text-gray-600">View system activities and track changes</p>
+                            </div>
+                            <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center group-hover:bg-orange-600 transition-colors">
+                                <ScrollText className="w-6 h-6 text-orange-600 group-hover:text-white transition-colors" />
+                            </div>
+                        </Link>
+                    ) : (
+                        <div
+                            onClick={() => {
+                                if (window.confirm("Access Restricted. You need Administrator permission to view Audit Logs.\n\nWould you like to send an access request to the Admin?")) {
+                                    alert("Access request sent successfully!");
+                                }
+                            }}
+                            className="glass-card p-6 flex items-center justify-between hover:shadow-xl transition-all cursor-pointer group"
+                        >
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900 mb-1">Audit Logs</h3>
+                                <p className="text-sm text-gray-600">View system activities and track changes</p>
+                            </div>
+                            <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center group-hover:bg-orange-600 transition-colors">
+                                <ScrollText className="w-6 h-6 text-orange-600 group-hover:text-white transition-colors" />
+                            </div>
                         </div>
-                        <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center group-hover:bg-orange-600 transition-colors">
-                            <ScrollText className="w-6 h-6 text-orange-600 group-hover:text-white transition-colors" />
-                        </div>
-                    </Link>
+                    )}
                 </div>
+
 
                 {/* Clearance Agent Actions */}
                 {(user?.role === 'Clearance Agent' || user?.role === 'Administrator') && (
@@ -257,7 +278,7 @@ const Dashboard: React.FC = () => {
                                 <tr className="border-b border-gray-200">
                                     <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Shipment ID</th>
                                     <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Customer</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Destination</th>
+
                                     <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Status</th>
                                     <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Date & Time</th>
                                 </tr>
@@ -269,7 +290,7 @@ const Dashboard: React.FC = () => {
                                             <span className="font-mono text-sm font-semibold text-primary-700">{shipment.id}</span>
                                         </td>
                                         <td className="py-4 px-4 text-sm text-gray-900">{shipment.customer}</td>
-                                        <td className="py-4 px-4 text-sm text-gray-600">{shipment.destination}</td>
+
                                         <td className="py-4 px-4">
                                             <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(shipment.status)}`}>
                                                 {getStatusIcon(shipment.status)}
