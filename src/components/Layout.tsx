@@ -1,8 +1,6 @@
 import React, { type ReactNode } from 'react';
 import Sidebar from './Sidebar';
-import { Menu, Bell, User, LogOut } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { Menu, Bell } from 'lucide-react';
 
 interface LayoutProps {
     children: ReactNode;
@@ -10,13 +8,6 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
     const [sidebarOpen, setSidebarOpen] = React.useState(false);
-    const { user, logout } = useAuth();
-    const navigate = useNavigate();
-
-    const handleLogout = () => {
-        logout();
-        navigate('/');
-    };
 
     return (
         <div className="min-h-screen flex">
@@ -44,33 +35,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                             </button>
 
-                            <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-white/50">
-                                <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-primary-600 to-accent-600 flex items-center justify-center border-2 border-white shadow-sm flex-shrink-0">
-                                    {user?.photo_url ? (
-                                        <img
-                                            src={user.photo_url.startsWith('http') ? user.photo_url : `${import.meta.env.MODE === 'production' ? '' : 'http://localhost:5001'}${user.photo_url}`}
-                                            alt="Profile"
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <span className="text-white text-xs font-bold">
-                                            {user?.username ? user.username.charAt(0).toUpperCase() : <User className="w-4 h-4 text-white" />}
-                                        </span>
-                                    )}
-                                </div>
-                                <div className="hidden md:block">
-                                    <p className="text-sm font-semibold text-gray-800">{user?.username}</p>
-                                    <p className="text-xs text-gray-600">{user?.role}</p>
-                                </div>
-                            </div>
-
-                            <button
-                                onClick={handleLogout}
-                                className="p-2 rounded-lg hover:bg-red-50 text-red-600 transition-colors"
-                                title="Logout"
-                            >
-                                <LogOut className="w-5 h-5" />
-                            </button>
                         </div>
                     </div>
                 </header>
