@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
-import { analyticsAPI, shipmentsAPI } from '../services/api';
+import { analyticsAPI, shipmentsAPI, notificationsAPI } from '../services/api';
 import {
     Package,
     Clock,
@@ -24,6 +24,9 @@ const Dashboard: React.FC = () => {
     const [data, setData] = useState<any>(null);
     const [originalData, setOriginalData] = useState<any>(null);
     const [viewingAll, setViewingAll] = useState(false);
+    const [notifications, setNotifications] = useState<any[]>([]);
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -31,6 +34,10 @@ const Dashboard: React.FC = () => {
                 const response = await analyticsAPI.getDashboard();
                 setData(response.data);
                 setOriginalData(response.data);
+
+                const notifResponse = await notificationsAPI.getAll();
+                setNotifications(notifResponse.data);
+                setUnreadCount(notifResponse.data.filter((n: any) => !n.is_read).length);
             } catch (error) {
                 console.error('Error fetching dashboard data:', error);
             } finally {
@@ -148,13 +155,76 @@ const Dashboard: React.FC = () => {
                         </div>
                     </div>
                     {/* Notifications */}
-                    <button className="p-2 rounded-lg hover:bg-white hover:shadow-sm transition-all relative group">
-                        <Bell className="w-6 h-6 text-gray-400 group-hover:text-indigo-600 transition-colors" />
-                        <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-gray-50"></span>
-                    </button>
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowNotifications(!showNotifications)}
+                            className="p-2 rounded-lg hover:bg-white hover:shadow-sm transition-all relative group"
+                        >
+                            <Bell className={`w-6 h-6 transition-colors ${showNotifications ? 'text-indigo-600' : 'text-gray-400 group-hover:text-indigo-600'}`} />
+                            {unreadCount > 0 && (
+                                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-gray-50"></span>
+                            )}
+                        </button>
+
+                        {/* Notification Dropdown */}
+                        {showNotifications && (
+                            <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50 animate-in fade-in slide-in-from-top-2">
+                                <div className="p-4 border-b border-gray-50 flex justify-between items-center">
+                                    <h3 className="font-semibold text-gray-900">Notifications</h3>
+                                    {unreadCount > 0 && (
+                                        <button
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
+                                                await notificationsAPI.markAllRead();
+                                                setNotifications(notifications.map(n => ({ ...n, is_read: true })));
+                                                setUnreadCount(0);
+                                            }}
+                                            className="text-xs text-indigo-600 hover:text-indigo-700"
+                                        >
+                                            Mark all read
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="max-h-96 overflow-y-auto">
+                                    {notifications.length === 0 ? (
+                                        <div className="p-8 text-center text-gray-500">
+                                            <Bell className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                                            <p className="text-sm">No notifications</p>
+                                        </div>
+                                    ) : (
+                                        <div className="divide-y divide-gray-50">
+                                            {notifications.map((notif: any) => (
+                                                <div
+                                                    key={notif.id}
+                                                    className={`p-4 hover:bg-gray-50 transition-colors ${!notif.is_read ? 'bg-indigo-50/30' : ''}`}
+                                                >
+                                                    <div className="flex gap-3">
+                                                        <div className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${!notif.is_read ? 'bg-indigo-500' : 'bg-transparent'}`} />
+                                                        <div>
+                                                            <p className="text-sm font-medium text-gray-900">{notif.title}</p>
+                                                            <p className="text-sm text-gray-600 mt-1">{notif.message}</p>
+                                                            <div className="flex items-center gap-2 mt-2">
+                                                                <span className="text-xs text-gray-400">
+                                                                    {new Date(notif.created_at).toLocaleDateString()}
+                                                                </span>
+                                                                {notif.link && (
+                                                                    <Link to={notif.link} className="text-xs text-indigo-600 hover:underline">
+                                                                        View Details
+                                                                    </Link>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                {/* Stats Grid */}
                 {/* Stats Grid */}
                 <div className="space-y-8">
                     {/* Team Snapshot */}

@@ -1,6 +1,7 @@
 import express from 'express';
 import pool from '../config/database.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { broadcastNotification, broadcastToAll } from '../utils/notify.js';
 
 const router = express.Router();
 
@@ -254,6 +255,13 @@ router.post('/send-batch', authenticateToken, async (req, res) => {
             [req.user.id, 'SEND_PAYMENTS_TO_ACCOUNTS', `Sent ${result.rowCount} payments to accounts`, 'JOB', 'BATCH']
         );
 
+        // Notify Accountants
+        try {
+            await broadcastNotification('Accountant', 'Payment Approval Request', `New payments have been sent for approval by ${req.user.username}.`, 'action', '/payments');
+        } catch (noteError) {
+            console.error('Notification error:', noteError);
+        }
+
         res.json({ message: 'Payments sent to accounts', updated: result.rowCount });
     } catch (error) {
         console.error('Send batch error:', error);
@@ -334,18 +342,39 @@ router.post('/process-batch', authenticateToken, async (req, res) => {
             paymentIds
         ]);
 
+        // Check for Job Completion
+        const distinctJobIds = [...new Set(result.rows.map(p => p.job_id))];
+        const completedJobs = [];
+
+        for (const jId of distinctJobIds) {
+            // Check if all payments are paid
+            const checkRes = await client.query("SELECT count(*) FROM job_payments WHERE job_id = $1 AND status != 'Paid'", [jId]);
+            if (parseInt(checkRes.rows[0].count) === 0) {
+                // Try to complete job if cleared
+                const updateRes = await client.query("UPDATE shipments SET status = 'Completed' WHERE id = $1 AND progress = 100 AND status != 'Completed' RETURNING id, customer", [jId]);
+                if (updateRes.rows.length > 0) {
+                    completedJobs.push(updateRes.rows[0]);
+                }
+            }
+        }
+
         await client.query('COMMIT');
 
-        // Audit Log (outside text block for simplicity, or we do it here)
-        // We can do it after response or here. Here is safer.
-        // Audit Log per Job
-        const distinctJobIds = [...new Set(result.rows.map(p => p.job_id))];
+        // Audit Logs & Notifications (After Commit)
         for (const jId of distinctJobIds) {
             await pool.query(
                 'INSERT INTO audit_logs (user_id, action, details, entity_type, entity_id) VALUES ($1, $2, $3, $4, $5)',
                 [processed_by, 'PAYMENT_PROCESSED', `Payments processed (Voucher: ${voucherNo})`, 'SHIPMENT', jId]
             );
         }
+
+        // Notify Completed
+        for (const job of completedJobs) {
+            try {
+                await broadcastToAll('Job Completed', `Job ${job.id} (${job.customer}) is now Completed.`, 'success', `/registry?id=${job.id}`);
+            } catch (ne) { console.error(ne); }
+        }
+
 
         res.json({ message: 'Payments processed successfully', data: result.rows, voucherNo });
     } catch (error) {

@@ -18,6 +18,7 @@ import deliveryAgentRoutes from './routes/delivery_agents.js';
 import paymentRoutes from './routes/payments.js';
 import paymentItemsRoutes from './routes/payment_items.js';
 import containerRoutes from './routes/containers.js';
+import notificationRoutes from './routes/notifications.js';
 
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -75,6 +76,7 @@ app.use('/api/delivery-agents', deliveryAgentRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/payment-items', paymentItemsRoutes);
 app.use('/api/containers', containerRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 
 // Health check
