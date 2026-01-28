@@ -80,9 +80,9 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
             WHERE status = 'Pending'
         `);
 
-    // 4. Documents Received (Uploaded today - Distinct Jobs)
+    // 4. Documents Received (Uploaded today)
     const documentsReceived = await pool.query(`
-            SELECT COUNT(DISTINCT shipment_id) 
+            SELECT COUNT(*) 
             FROM shipment_documents 
             WHERE DATE(uploaded_at) = CURRENT_DATE
         `);
