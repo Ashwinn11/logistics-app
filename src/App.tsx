@@ -10,7 +10,7 @@ import ClearanceSchedule from './pages/ClearanceSchedule';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import Reports from './pages/Reports';
-import Containers from './pages/Containers';
+
 import DeliveryNotes from './pages/DeliveryNotes';
 import ChangePassword from './pages/ChangePassword';
 import ResetPassword from './pages/ResetPassword';
@@ -91,14 +91,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/containers"
-            element={
-              <ProtectedRoute>
-                <Containers />
-              </ProtectedRoute>
-            }
-          />
+
           <Route
             path="/delivery-notes"
             element={

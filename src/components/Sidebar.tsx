@@ -9,7 +9,7 @@ import {
     Calendar,
     UserCircle,
     Settings,
-    Container,
+
     ClipboardList,
     CreditCard,
     LogOut
@@ -53,8 +53,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     if (isClearance) {
         menuItems.push(
             { icon: Calendar, label: 'Clearance Schedule', path: '/schedule' },
-            { icon: ClipboardList, label: 'Delivery Notes', path: '/delivery-notes' },
-            { icon: Container, label: 'Containers', path: '/containers' }
+            { icon: ClipboardList, label: 'Delivery Notes', path: '/delivery-notes' }
         );
     }
 
