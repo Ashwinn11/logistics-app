@@ -1461,10 +1461,7 @@ const ShipmentRegistry: React.FC = () => {
                                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Customs Form No.</p>
                                     <p className="font-bold text-gray-900">{selectedJob.customs_r_form || '-'}</p>
                                 </div>
-                                <div>
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Registered Date</p>
-                                    <p className="font-bold text-gray-900">{new Date(selectedJob.created_at).toLocaleDateString()}</p>
-                                </div>
+
 
                             </div>
                         </div>

@@ -136,7 +136,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                             }
                         >
                             <Settings className="w-5 h-5" />
-                            <span className="font-medium">Settings</span>
+                            <span className="font-medium">Data Entry</span>
                         </NavLink>
                         <NavLink
                             to="/profile"

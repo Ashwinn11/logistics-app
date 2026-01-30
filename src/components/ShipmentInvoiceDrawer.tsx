@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ChevronDown, Save } from 'lucide-react';
+import { X, Save } from 'lucide-react';
 
 interface ShipmentInvoiceDrawerProps {
     isOpen: boolean;
@@ -8,8 +8,7 @@ interface ShipmentInvoiceDrawerProps {
     initialData?: any;
 }
 
-const CARGO_TYPES = ['GENERAL', 'PERISHABLE', 'HAZARDOUS', 'FRAGILE', 'REEFER'];
-const OFFICES = ['00MP', '00AP', '00HA', '00BW', '00HK', '00HM', '00PO', '00SG', '00SH'];
+
 
 const ShipmentInvoiceDrawer: React.FC<ShipmentInvoiceDrawerProps> = ({ isOpen, onClose, onSave, initialData }) => {
     const [formData, setFormData] = useState<any>({
@@ -93,20 +92,7 @@ const ShipmentInvoiceDrawer: React.FC<ShipmentInvoiceDrawerProps> = ({ isOpen, o
                                     className="input-field w-full py-2 px-3 border rounded text-sm"
                                 />
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Cargo Type*</label>
-                                <div className="relative">
-                                    <select
-                                        name="cargo_type"
-                                        value={formData.cargo_type}
-                                        onChange={handleInputChange}
-                                        className="input-field w-full py-2 px-3 border rounded text-sm appearance-none bg-white"
-                                    >
-                                        {CARGO_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                                    </select>
-                                    <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-gray-400 pointer-events-none" />
-                                </div>
-                            </div>
+
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -120,21 +106,7 @@ const ShipmentInvoiceDrawer: React.FC<ShipmentInvoiceDrawerProps> = ({ isOpen, o
                                     placeholder=""
                                 />
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Office</label>
-                                <div className="relative">
-                                    <select
-                                        name="office"
-                                        value={formData.office}
-                                        onChange={handleInputChange}
-                                        className="input-field w-full py-2 px-3 border rounded text-sm appearance-none bg-white"
-                                    >
-                                        <option value="">Select Office</option>
-                                        {OFFICES.map(o => <option key={o} value={o}>{o}</option>)}
-                                    </select>
-                                    <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-gray-400 pointer-events-none" />
-                                </div>
-                            </div>
+
                         </div>
 
                     </div>
