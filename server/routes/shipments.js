@@ -646,7 +646,14 @@ router.put('/:id', authenticateToken, async (req, res) => {
 
         // Update Job Invoice ID if provided
         if (job_invoice_no) {
-            await pool.query('UPDATE invoices SET id = $1 WHERE shipment_id = $2', [job_invoice_no, id]);
+            // Check if invoice exists for this shipment
+            const invCheck = await pool.query('SELECT id FROM invoices WHERE shipment_id = $1', [id]);
+            if (invCheck.rows.length > 0) {
+                await pool.query('UPDATE invoices SET id = $1 WHERE shipment_id = $2', [job_invoice_no, id]);
+            } else {
+                // Create new invoice record if missing
+                await pool.query('INSERT INTO invoices (id, shipment_id, amount, status) VALUES ($1, $2, 0, $3)', [job_invoice_no, id, 'Pending']);
+            }
         }
 
         const result = await pool.query(
