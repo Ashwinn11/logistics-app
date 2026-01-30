@@ -94,6 +94,10 @@ const ClearanceSchedule: React.FC = () => {
         try {
             await deliveryNotesAPI.create(data);
             alert('Delivery Note Created Successfully!');
+
+            // Instantly remove the processed schedules from the view
+            setSchedules(prev => prev.filter(s => !selectedIds.includes(s.id)));
+
             setIsDeliveryDrawerOpen(false);
             setSelectedIds([]);
             setIsDeliveryNoteMode(false);
@@ -117,13 +121,7 @@ const ClearanceSchedule: React.FC = () => {
                         <p className="text-gray-500 mt-1">Clearance schedule for the jobs.</p>
                     </div>
                     <div className="flex gap-2">
-                        <button
-                            onClick={() => { setLoading(true); setSearchTerm(searchTerm + ' '); setTimeout(() => setSearchTerm(searchTerm), 10); }}
-                            className="p-2 bg-white border border-gray-200 text-gray-500 hover:text-indigo-600 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
-                            title="Refresh"
-                        >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                        </button>
+
 
                         {isDeliveryNoteMode && selectedIds.length > 0 ? (
                             <button
