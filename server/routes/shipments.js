@@ -316,13 +316,15 @@ router.get('/:id', authenticateToken, async (req, res) => {
         const paymentsStats = await pool.query(`
             SELECT 
                 COUNT(*) as total, 
-                COUNT(*) FILTER (WHERE status = 'Paid') as paid_count 
+                COUNT(*) FILTER (WHERE status = 'Paid') as paid_count,
+                COUNT(*) FILTER (WHERE status = 'Pending') as pending_count
             FROM job_payments 
             WHERE job_id = $1
         `, [id]);
 
         const totalPayments = parseInt(paymentsStats.rows[0].total) || 0;
         const paidPayments = parseInt(paymentsStats.rows[0].paid_count) || 0;
+        const pendingPayments = parseInt(paymentsStats.rows[0].pending_count) || 0;
         const isFullyPaid = totalPayments > 0 && totalPayments === paidPayments;
 
         res.json({
@@ -337,7 +339,8 @@ router.get('/:id', authenticateToken, async (req, res) => {
             delivery_notes: deliveryNoteResult.rows,
             containers: containersResult.rows,
             bls: blsResult.rows,
-            is_fully_paid: isFullyPaid
+            is_fully_paid: isFullyPaid,
+            has_pending_payments: pendingPayments > 0
         });
 
     } catch (error) {

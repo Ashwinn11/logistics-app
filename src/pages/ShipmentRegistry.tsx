@@ -1239,6 +1239,10 @@ const ShipmentRegistry: React.FC = () => {
                                         >
                                             <Check className="w-4 h-4" /> Mark Completed
                                         </button>
+                                    ) : selectedJob.has_pending_payments ? (
+                                        <span className="px-5 py-2.5 bg-amber-500 text-white text-sm font-bold rounded-lg flex items-center gap-2 cursor-default shadow-lg shadow-amber-200">
+                                            <Lock className="w-4 h-4" /> Approval Pending
+                                        </span>
                                     ) : (
                                         <button
                                             onClick={() => setActiveTab('Payments')}
@@ -1248,12 +1252,9 @@ const ShipmentRegistry: React.FC = () => {
                                         </button>
                                     )
                                 ) : isAllScheduled ? (
-                                    <button
-                                        onClick={() => handleOpenPopup('schedule', selectedJob)}
-                                        className="px-5 py-2.5 bg-emerald-600 text-white text-sm font-bold rounded-lg flex items-center gap-2 hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200"
-                                    >
+                                    <span className="px-5 py-2.5 bg-emerald-600 text-white text-sm font-bold rounded-lg flex items-center gap-2 cursor-default shadow-lg shadow-emerald-200">
                                         <Calendar className="w-4 h-4" /> Clearance Scheduled
-                                    </button>
+                                    </span>
                                 ) : isDocComplete ? (
                                     <button
                                         onClick={() => handleOpenPopup('schedule', selectedJob)}
