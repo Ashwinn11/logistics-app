@@ -2,245 +2,306 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { shipmentsAPI } from '../services/api';
 import {
-    BarChart,
-    Bar,
+    AreaChart,
+    Area,
     XAxis,
     YAxis,
     CartesianGrid,
     Tooltip,
-    Legend,
-    ResponsiveContainer
+    ResponsiveContainer,
+    type TooltipProps
 } from 'recharts';
-import { Loader2, TrendingUp, Package, CheckCircle, Clock } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+
+interface Shipment {
+    id: string;
+    consignee_name: string;
+    created_at: string;
+    status: string;
+    port_of_loading?: string;
+    transport_mode?: string;
+    // Add other fields as needed based on API response
+    [key: string]: any;
+}
 
 const Reports: React.FC = () => {
     const [loading, setLoading] = useState(true);
+    const [date, setDate] = useState(new Date());
+    const [shipments, setShipments] = useState<Shipment[]>([]);
     const [chartData, setChartData] = useState<any[]>([]);
+
+    // Stats
     const [stats, setStats] = useState({
-        total: 0,
-        completed: 0,
         pending: 0,
-        thisMonth: 0
+        completed: 0,
+        cancelled: 0,
+        total: 0
     });
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const response = await shipmentsAPI.getAll();
-                const shipments = response.data || [];
-                processChartData(shipments);
-            } catch (error) {
-                console.error("Failed to fetch report data", error);
-            } finally {
-                setLoading(false);
-            }
-        };
+    // Filtered Shipments for Table
+    const [filteredShipments, setFilteredShipments] = useState<Shipment[]>([]);
 
+    useEffect(() => {
         fetchData();
     }, []);
 
-    const processChartData = (shipments: any[]) => {
-        // Initialize aggregation map
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const currentYear = new Date().getFullYear();
+    useEffect(() => {
+        processData();
+    }, [date, shipments]);
 
-        // Create base data structure for current year
-        const monthlyData = months.map(month => ({
-            name: month,
-            Shipments: 0,
-            Completed: 0
-        }));
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            const response = await shipmentsAPI.getAll();
+            const data = response.data || [];
+            setShipments(data);
+        } catch (error) {
+            console.error("Failed to fetch report data", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        let total = 0;
-        let completed = 0;
+    const processData = () => {
+        if (!shipments.length) return;
+
+        const year = date.getFullYear();
+        const month = date.getMonth();
+
+        // 1. Filter shipments for the selected month
+        const monthShipments = shipments.filter(s => {
+            const d = new Date(s.created_at);
+            return d.getFullYear() === year && d.getMonth() === month;
+        });
+
+        filteredShipments.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        setFilteredShipments(monthShipments);
+
+        // 2. Calculate Stats (Overall or for this month? User image says "Last 30 days" under cards, but usually reports are for the selected period. Let's stick to selected month stats for consistency with the chart)
+        // Actually, typical dashboard logic:
+        // - Cards: Summary of the VIEWED period (selected month).
         let pending = 0;
-        let thisMonthCount = 0;
-        const currentMonthIndex = new Date().getMonth();
+        let completed = 0;
+        let cancelled = 0;
 
-        shipments.forEach(shipment => {
-            const date = new Date(shipment.created_at || Date.now());
-            const monthIndex = date.getMonth();
-            const year = date.getFullYear();
-
-            // Stats Calculation
-            total++;
-            if (shipment.status === 'Completed') completed++;
+        monthShipments.forEach(s => {
+            const st = s.status?.toLowerCase() || '';
+            if (st === 'completed') completed++;
+            else if (st === 'cancelled' || st === 'terminated') cancelled++;
             else pending++;
-
-            if (year === currentYear && monthIndex === currentMonthIndex) {
-                thisMonthCount++;
-            }
-
-            // Chart Data Aggregation (Current Year Only for clarity)
-            if (year === currentYear) {
-                monthlyData[monthIndex].Shipments += 1;
-                if (shipment.status === 'Completed') {
-                    monthlyData[monthIndex].Completed += 1;
-                }
-            }
         });
 
         setStats({
-            total,
-            completed,
             pending,
-            thisMonth: thisMonthCount
+            completed,
+            cancelled,
+            total: monthShipments.length
         });
 
-        setChartData(monthlyData);
+        // 3. Prepare Chart Data (Day by Day)
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const dailyData = [];
+
+        for (let i = 1; i <= daysInMonth; i++) {
+            const dayDate = new Date(year, month, i);
+            const dateStr = dayDate.toISOString().split('T')[0]; // YYYY-MM-DD
+
+            // Count for this day
+            const dayShipments = monthShipments.filter(s => {
+                const sDate = new Date(s.created_at);
+                return sDate.getDate() === i;
+            });
+
+            // You can split by status if you want stacked area, or just total volume
+            // The image shows a single line/area. Let's do Total Volume.
+            dailyData.push({
+                date: dateStr,
+                day: i,
+                volume: dayShipments.length
+            });
+        }
+
+        setChartData(dailyData);
+    };
+
+    const handlePrevMonth = () => {
+        setDate(new Date(date.getFullYear(), date.getMonth() - 1, 1));
+    };
+
+    const handleNextMonth = () => {
+        setDate(new Date(date.getFullYear(), date.getMonth() + 1, 1));
+    };
+
+    const CustomTooltip = ({ active, payload, label }: any) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className="bg-white p-3 border border-gray-100 shadow-lg rounded-lg">
+                    <p className="text-sm font-bold text-gray-900">{new Date(label).toDateString()}</p>
+                    <p className="text-sm text-indigo-600 font-medium">
+                        Shipments: {payload[0].value}
+                    </p>
+                </div>
+            );
+        }
+        return null;
     };
 
     return (
         <Layout>
-            <div className="p-8 animate-fade-in space-y-8 font-sans">
+            <div className="p-8 font-sans animate-fade-in pb-20">
                 {/* Header */}
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Analytics & Reports</h1>
-                    <p className="text-gray-500 mt-1">Overview of shipment performance and operational metrics.</p>
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <h1 className="text-3xl font-bold text-gray-900">Reports</h1>
+
+                    <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm">
+                        <button onClick={handlePrevMonth} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+                            <ChevronLeft className="w-5 h-5 text-gray-600" />
+                        </button>
+                        <div className="flex items-center gap-2 font-medium text-gray-700 w-32 justify-center">
+                            <CalendarIcon className="w-4 h-4 text-gray-400" />
+                            {date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                        </div>
+                        <button onClick={handleNextMonth} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+                            <ChevronRight className="w-5 h-5 text-gray-600" />
+                        </button>
+                    </div>
                 </div>
 
                 {loading ? (
-                    <div className="flex justify-center items-center h-64">
-                        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+                    <div className="flex justify-center items-center h-96">
+                        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
                     </div>
                 ) : (
-                    <>
-                        {/* Stats Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-start justify-between">
-                                <div>
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Shipments</p>
-                                    <h3 className="text-2xl font-bold text-gray-900">{stats.total}</h3>
-                                </div>
-                                <div className="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
-                                    <Package className="w-5 h-5" />
-                                </div>
+                    <div className="space-y-8">
+                        {/* KPI Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                                <p className="text-gray-500 text-sm font-medium">Pending Jobs</p>
+                                <h3 className="text-3xl font-bold text-gray-900 mt-2">{stats.pending}</h3>
+                                <p className="text-xs text-gray-400 mt-1">in {date.toLocaleDateString('en-US', { month: 'long' })}</p>
                             </div>
-                            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-start justify-between">
-                                <div>
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Completed Jobs</p>
-                                    <h3 className="text-2xl font-bold text-gray-900">{stats.completed}</h3>
-                                </div>
-                                <div className="p-3 bg-green-50 text-green-600 rounded-lg">
-                                    <CheckCircle className="w-5 h-5" />
-                                </div>
+                            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                                <p className="text-gray-500 text-sm font-medium">Completed Jobs</p>
+                                <h3 className="text-3xl font-bold text-gray-900 mt-2">{stats.completed}</h3>
+                                <p className="text-xs text-gray-400 mt-1">in {date.toLocaleDateString('en-US', { month: 'long' })}</p>
                             </div>
-                            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-start justify-between">
-                                <div>
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Active / Pending</p>
-                                    <h3 className="text-2xl font-bold text-gray-900">{stats.pending}</h3>
-                                </div>
-                                <div className="p-3 bg-amber-50 text-amber-600 rounded-lg">
-                                    <Clock className="w-5 h-5" />
-                                </div>
+                            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                                <p className="text-gray-500 text-sm font-medium">Cancelled Jobs</p>
+                                <h3 className="text-3xl font-bold text-gray-900 mt-2">{stats.cancelled}</h3>
+                                <p className="text-xs text-gray-400 mt-1">in {date.toLocaleDateString('en-US', { month: 'long' })}</p>
                             </div>
-                            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-start justify-between">
-                                <div>
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">This Month</p>
-                                    <h3 className="text-2xl font-bold text-gray-900">{stats.thisMonth}</h3>
-                                </div>
-                                <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
-                                    <TrendingUp className="w-5 h-5" />
-                                </div>
+                            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                                <p className="text-gray-500 text-sm font-medium">Total Jobs</p>
+                                <h3 className="text-3xl font-bold text-gray-900 mt-2">{stats.total}</h3>
+                                <p className="text-xs text-gray-400 mt-1">in {date.toLocaleDateString('en-US', { month: 'long' })}</p>
                             </div>
                         </div>
 
-                        {/* Charts Section */}
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            {/* Main Bar Chart */}
-                            <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-                                <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                                    <TrendingUp className="w-5 h-5 text-indigo-600" />
-                                    Monthly Shipment Volume
-                                </h3>
-                                <div className="h-[400px] w-full">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart
-                                            data={chartData}
-                                            margin={{
-                                                top: 20,
-                                                right: 30,
-                                                left: 20,
-                                                bottom: 5,
-                                            }}
-                                        >
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                                            <XAxis
-                                                dataKey="name"
-                                                axisLine={false}
-                                                tickLine={false}
-                                                tick={{ fill: '#6B7280', fontSize: 12 }}
-                                                dy={10}
-                                            />
-                                            <YAxis
-                                                axisLine={false}
-                                                tickLine={false}
-                                                tick={{ fill: '#6B7280', fontSize: 12 }}
-                                            />
-                                            <Tooltip
-                                                cursor={{ fill: '#F3F4F6' }}
-                                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                                            />
-                                            <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                                            <Bar
-                                                dataKey="Shipments"
-                                                fill="#4F46E5"
-                                                radius={[4, 4, 0, 0]}
-                                                barSize={32}
-                                                name="Total Shipments"
-                                            />
-                                            <Bar
-                                                dataKey="Completed"
-                                                fill="#10B981"
-                                                radius={[4, 4, 0, 0]}
-                                                barSize={32}
-                                                name="Completed Jobs"
-                                            />
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </div>
-
-                            {/* Summary / Side Panel */}
-                            <div className="bg-slate-900 text-white p-8 rounded-xl shadow-xl flex flex-col justify-center relative overflow-hidden">
-                                <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-indigo-500 rounded-full opacity-20 blur-2xl"></div>
-                                <div className="absolute bottom-0 left-0 -ml-8 -mb-8 w-32 h-32 bg-blue-500 rounded-full opacity-20 blur-2xl"></div>
-
-                                <h3 className="text-xl font-bold mb-2 relative z-10">Performance Insight</h3>
-                                <p className="text-slate-400 text-sm mb-8 relative z-10">
-                                    Your team has completed <span className="text-white font-bold">{((stats.completed / (stats.total || 1)) * 100).toFixed(0)}%</span> of all registered jobs this year.
-                                </p>
-
-                                <div className="space-y-6 relative z-10">
-                                    <div>
-                                        <div className="flex justify-between text-sm mb-2">
-                                            <span className="text-slate-400">Completion Rate</span>
-                                            <span className="font-bold">{((stats.completed / (stats.total || 1)) * 100).toFixed(1)}%</span>
-                                        </div>
-                                        <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                                            <div
-                                                className="bg-green-500 h-2 rounded-full transition-all duration-1000"
-                                                style={{ width: `${(stats.completed / (stats.total || 1)) * 100}%` }}
-                                            ></div>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <div className="flex justify-between text-sm mb-2">
-                                            <span className="text-slate-400">Monthly Target (Est. 50)</span>
-                                            <span className="font-bold">{Math.min(((stats.thisMonth / 50) * 100), 100).toFixed(0)}%</span>
-                                        </div>
-                                        <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                                            <div
-                                                className="bg-indigo-500 h-2 rounded-full transition-all duration-1000"
-                                                style={{ width: `${Math.min(((stats.thisMonth / 50) * 100), 100)}%` }}
-                                            ></div>
-                                        </div>
-                                    </div>
-                                </div>
+                        {/* Chart */}
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <div className="h-[350px] w-full mt-4">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart
+                                        data={chartData}
+                                        margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                                    >
+                                        <defs>
+                                            <linearGradient id="colorVolume" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.1} />
+                                                <stop offset="95%" stopColor="#F59E0B" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                                        <XAxis
+                                            dataKey="date"
+                                            tickFormatter={(val) => new Date(val).getDate().toString()}
+                                            axisLine={false}
+                                            tickLine={false}
+                                            tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                                            dy={10}
+                                        />
+                                        <YAxis
+                                            axisLine={false}
+                                            tickLine={false}
+                                            tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                                        />
+                                        <Tooltip content={<CustomTooltip />} />
+                                        <Area
+                                            type="monotone"
+                                            dataKey="volume"
+                                            stroke="#F59E0B"
+                                            strokeWidth={3}
+                                            fillOpacity={1}
+                                            fill="url(#colorVolume)"
+                                            activeDot={{ r: 6, strokeWidth: 0 }}
+                                        />
+                                    </AreaChart>
+                                </ResponsiveContainer>
                             </div>
                         </div>
-                    </>
+
+                        {/* Job Details Table */}
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="px-6 py-5 border-b border-gray-100">
+                                <h3 className="font-bold text-gray-900">Job Details</h3>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead className="bg-gray-50 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                        <tr>
+                                            <th className="px-6 py-4">Job</th>
+                                            <th className="px-6 py-4">Consignee</th>
+                                            <th className="px-6 py-4">Date</th>
+                                            <th className="px-6 py-4">Status</th>
+                                            <th className="px-6 py-4">Port</th>
+                                            <th className="px-6 py-4 text-right">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100 text-sm">
+                                        {filteredShipments.length > 0 ? (
+                                            filteredShipments.map((job) => (
+                                                <tr key={job.id} className="hover:bg-gray-50 transition-colors">
+                                                    <td className="px-6 py-4 font-bold text-gray-900">{job.id}</td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex flex-col">
+                                                            <span className="font-medium text-gray-900">{job.consignee_name || job.consignee || '-'}</span>
+                                                            <span className="text-xs text-gray-500">{job.exporter_name || job.exporter || ''}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-gray-500">
+                                                        {new Date(job.created_at).toLocaleDateString()}
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase
+                                                            ${job.status === 'Completed' ? 'bg-green-100 text-green-700' :
+                                                                job.status === 'Clearance' ? 'bg-orange-100 text-orange-700' :
+                                                                    'bg-gray-100 text-gray-700'}`}>
+                                                            {job.status}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-gray-500 uppercase">{job.port_of_loading || job.port || '-'}</td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        <button
+                                                            className="text-indigo-600 hover:text-indigo-800 font-medium text-xs"
+                                                            onClick={() => window.open(`/shipments/${job.id}`, '_blank')} // Or navigate
+                                                        >
+                                                            View
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                                                    No jobs found for this month.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </div>
         </Layout>
