@@ -266,6 +266,8 @@ router.get('/', authenticateToken, async (req, res) => {
         if (status && status !== 'All') {
             conditions.push(`s.status = $${params.length + 1}`);
             params.push(status);
+        } else if (status === 'All') {
+            // Fetch ALL jobs, do not exclude 'Completed'
         } else {
             // Default: Hide 'Completed' jobs unless searching
             if (!search) {

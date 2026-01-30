@@ -47,7 +47,7 @@ const Reports: React.FC = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const response = await shipmentsAPI.getAll();
+            const response = await shipmentsAPI.getAll({ status: 'All' });
             const data = response.data || [];
             setShipments(data);
         } catch (error) {
