@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import { analyticsAPI, shipmentsAPI, notificationsAPI } from '../services/api';
 import {
-    Package,
+
     Clock,
 
     CheckCircle,
@@ -12,7 +12,10 @@ import {
     ScrollText,
     User,
     Bell,
-    UserSearch
+    UserSearch,
+    CreditCard,
+    Calendar,
+    FileText
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -258,30 +261,80 @@ const Dashboard: React.FC = () => {
                     </div>
 
                     {/* Quick Actions */}
+                    {/* Quick Actions */}
                     <div>
                         <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <Link to="/registry" className="glass-card p-6 hover:shadow-lg transition-all cursor-pointer group flex flex-col items-center text-center">
-                                <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                                    <ScrollText className="w-6 h-6" />
-                                </div>
-                                <h3 className="font-bold text-gray-900">Clearance Board</h3>
-                                <p className="text-xs text-gray-500 mt-1">Assign teams & reschedule</p>
-                            </Link>
-                            <Link to="/delivery-notes" className="glass-card p-6 hover:shadow-lg transition-all cursor-pointer group flex flex-col items-center text-center">
-                                <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                                    <CheckCircle className="w-6 h-6" />
-                                </div>
-                                <h3 className="font-bold text-gray-900">Delivery Notes</h3>
-                                <p className="text-xs text-gray-500 mt-1">Approve documentation</p>
-                            </Link>
-                            <Link to="/containers" className="glass-card p-6 hover:shadow-lg transition-all cursor-pointer group flex flex-col items-center text-center">
-                                <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-                                    <Package className="w-6 h-6" />
-                                </div>
-                                <h3 className="font-bold text-gray-900">Container Tracking</h3>
-                                <p className="text-xs text-gray-500 mt-1">Monitor port status</p>
-                            </Link>
+                            {(['Administrator', 'All', 'Accountant', 'Clearance'].includes(user?.role || '') && (
+                                <Link to="/registry" className="glass-card p-6 hover:shadow-lg transition-all cursor-pointer group flex flex-col items-center text-center">
+                                    <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                        <ScrollText className="w-6 h-6" />
+                                    </div>
+                                    <h3 className="font-bold text-gray-900">Shipment Registry</h3>
+                                    <p className="text-xs text-gray-500 mt-1">Manage shipments and jobs</p>
+                                </Link>
+                            ))}
+
+                            {(['Administrator', 'All', 'Clearance'].includes(user?.role || '') && (
+                                <Link to="/schedule" className="glass-card p-6 hover:shadow-lg transition-all cursor-pointer group flex flex-col items-center text-center">
+                                    <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                                        <Calendar className="w-6 h-6" />
+                                    </div>
+                                    <h3 className="font-bold text-gray-900">Clearance Schedule</h3>
+                                    <p className="text-xs text-gray-500 mt-1">Track clearance timelines</p>
+                                </Link>
+                            ))}
+
+                            {(['Administrator', 'All', 'Accountant', 'Clearance'].includes(user?.role || '') && (
+                                <Link to="/delivery-notes" className="glass-card p-6 hover:shadow-lg transition-all cursor-pointer group flex flex-col items-center text-center">
+                                    <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                        <CheckCircle className="w-6 h-6" />
+                                    </div>
+                                    <h3 className="font-bold text-gray-900">Delivery Notes</h3>
+                                    <p className="text-xs text-gray-500 mt-1">Approve documentation</p>
+                                </Link>
+                            ))}
+
+                            {(['Administrator', 'All', 'Accountant'].includes(user?.role || '') && (
+                                <Link to="/payments" className="glass-card p-6 hover:shadow-lg transition-all cursor-pointer group flex flex-col items-center text-center">
+                                    <div className="w-12 h-12 rounded-xl bg-green-50 text-green-600 flex items-center justify-center mb-3 group-hover:bg-green-600 group-hover:text-white transition-colors">
+                                        <CreditCard className="w-6 h-6" />
+                                    </div>
+                                    <h3 className="font-bold text-gray-900">Payments</h3>
+                                    <p className="text-xs text-gray-500 mt-1">Track financial records</p>
+                                </Link>
+                            ))}
+
+                            {(['Administrator', 'All'].includes(user?.role || '') && (
+                                <Link to="/users" className="glass-card p-6 hover:shadow-lg transition-all cursor-pointer group flex flex-col items-center text-center">
+                                    <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                        <Users className="w-6 h-6" />
+                                    </div>
+                                    <h3 className="font-bold text-gray-900">User Management</h3>
+                                    <p className="text-xs text-gray-500 mt-1">Manage system users</p>
+                                </Link>
+                            ))}
+
+                            {(['Administrator', 'All'].includes(user?.role || '') && (
+                                <Link to="/reports" className="glass-card p-6 hover:shadow-lg transition-all cursor-pointer group flex flex-col items-center text-center">
+                                    <div className="w-12 h-12 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center mb-3 group-hover:bg-pink-600 group-hover:text-white transition-colors">
+                                        <FileText className="w-6 h-6" />
+                                    </div>
+                                    <h3 className="font-bold text-gray-900">Reports</h3>
+                                    <p className="text-xs text-gray-500 mt-1">View business analytics</p>
+                                </Link>
+                            ))}
+
+                            {(['Administrator', 'All'].includes(user?.role || '') && (
+                                <Link to="/logs" className="glass-card p-6 hover:shadow-lg transition-all cursor-pointer group flex flex-col items-center text-center">
+                                    <div className="w-12 h-12 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center mb-3 group-hover:bg-orange-600 group-hover:text-white transition-colors">
+                                        <ScrollText className="w-6 h-6" />
+                                    </div>
+                                    <h3 className="font-bold text-gray-900">Audit Logs</h3>
+                                    <p className="text-xs text-gray-500 mt-1">Monitor system activity</p>
+                                </Link>
+                            ))}
+
                             <Link to="/settings" className="glass-card p-6 hover:shadow-lg transition-all cursor-pointer group flex flex-col items-center text-center">
                                 <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-3 group-hover:bg-purple-600 group-hover:text-white transition-colors">
                                     <UserSearch className="w-6 h-6" />
@@ -293,36 +346,7 @@ const Dashboard: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Admin Management Section */}
-                {['Administrator', 'All'].includes(user?.role || '') && (
-                    <div className="mb-6">
-                        <Link to="/users" className="glass-card p-6 flex items-center justify-between hover:shadow-xl transition-all cursor-pointer group">
-                            <div>
-                                <h3 className="text-lg font-bold text-gray-900 mb-1">User Management</h3>
-                                <p className="text-sm text-gray-600">Create, edit, and manage system users</p>
-                            </div>
-                            <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center group-hover:bg-indigo-600 transition-colors">
-                                <Users className="w-6 h-6 text-indigo-600 group-hover:text-white transition-colors" />
-                            </div>
-                        </Link>
-                    </div>
-                )}
 
-                {/* System Activity Section - Admins Only */}
-                {['Administrator', 'All'].includes(user?.role || '') && (
-                    <div className="mb-6">
-                        <Link to="/logs" className="glass-card p-6 flex items-center justify-between hover:shadow-xl transition-all cursor-pointer group">
-                            <div>
-                                <h3 className="text-lg font-bold text-gray-900 mb-1">Audit Logs</h3>
-                                <p className="text-sm text-gray-600">View system activities and track changes</p>
-                            </div>
-                            <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center group-hover:bg-orange-600 transition-colors">
-                                <ScrollText className="w-6 h-6 text-orange-600 group-hover:text-white transition-colors" />
-                            </div>
-                        </Link>
-
-                    </div>
-                )}
 
 
 
