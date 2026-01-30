@@ -96,7 +96,7 @@ const Reports: React.FC = () => {
 
 
                     // Pending Payment
-                    if (payment !== 'paid') pendingPayment++;
+                    if (status === 'payment' && payment !== 'paid') pendingPayment++;
                 }
             }
         });
@@ -135,7 +135,7 @@ const Reports: React.FC = () => {
                         dayStats.Completed += 1;
                     } else {
 
-                        if (payment !== 'paid') dayStats.Payment += 1;
+                        if (status === 'payment' && payment !== 'paid') dayStats.Payment += 1;
                     }
                 }
             }
