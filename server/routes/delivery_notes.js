@@ -132,10 +132,14 @@ router.post('/', authenticateToken, async (req, res) => {
             // 3. Update Status if Complete
             if (deliveredBLs >= totalBLs) {
                 // Check if Payments are fully paid
-                const payRes = await client.query("SELECT count(*) FROM job_payments WHERE job_id = $1 AND status != 'Paid'", [jobId]);
-                const pendingPayments = parseInt(payRes.rows[0].count);
+                const payRes = await client.query("SELECT count(*) as pending FROM job_payments WHERE job_id = $1 AND status != 'Paid'", [jobId]);
+                const totalPayRes = await client.query("SELECT count(*) as total FROM job_payments WHERE job_id = $1", [jobId]);
 
-                if (pendingPayments === 0) {
+                const pendingPayments = parseInt(payRes.rows[0].pending);
+                const totalPayments = parseInt(totalPayRes.rows[0].total);
+
+                // Only mark as Completed if there ARE payments and they are all paid.
+                if (totalPayments > 0 && pendingPayments === 0) {
                     // Log Payment Completion Logic (Might be redundant if payments.js handles it, but good for completeness if DN triggers it)
                     await logActivity(req.user.id, 'ALL_PAYMENTS_COMPLETED', `All payments completed`, 'SHIPMENT', jobId);
 
@@ -147,7 +151,8 @@ router.post('/', authenticateToken, async (req, res) => {
                     } catch (ne) { console.error(ne); }
                 } else {
                     // Just Cleared
-                    await client.query('UPDATE shipments SET progress = 100, status = $1 WHERE id = $2', ['Pending', jobId]);
+                    // Set status to 'Cleared' to indicate clearance is done but payments might be pending
+                    await client.query('UPDATE shipments SET progress = 100, status = $1 WHERE id = $2', ['Cleared', jobId]);
                 }
             } else {
                 // Optional: Set partial progress? e.g. (delivered / total) * 100

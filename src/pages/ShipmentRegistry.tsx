@@ -1056,7 +1056,7 @@ const ShipmentRegistry: React.FC = () => {
         // Stage 1: Documentation (25%)
         // Rule: Documents uploaded AND details filled (Invoice, BL/AWB, Containers if Sea)
         const hasDocuments = selectedJob.documents && selectedJob.documents.length > 0;
-        const hasInvoiceDetails = !!(selectedJob.invoice_no && selectedJob.no_of_pkgs && selectedJob.cargo_type);
+        const hasInvoiceDetails = !!(selectedJob.invoice_no && selectedJob.no_of_pkgs);
         const hasBLDetails = selectedJob.bls && selectedJob.bls.length > 0;
         const hasContainerDetails = !isSea || (selectedJob.containers && selectedJob.containers.length > 0);
 
