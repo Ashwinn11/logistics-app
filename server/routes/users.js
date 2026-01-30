@@ -7,18 +7,17 @@ const router = express.Router();
 
 const VALID_ROLES = [
     'Administrator',
-    'Administrator Assistant',
+
     'Accountant',
-    'Accountant Assistant',
-    'Clearance Manager',
-    'Clearance Manager Assistant'
+    'Clearance',
+    'All'
 ];
 
 // Ensure authentication
 router.use(authenticateToken);
 
 // Get all users (Admins only)
-router.get('/', authorizeRole(['Administrator']), async (req, res) => {
+router.get('/', authorizeRole(['Administrator', 'All']), async (req, res) => {
     try {
         const result = await pool.query(`
             SELECT u.id, u.username, u.role, u.email, u.created_at,
@@ -35,7 +34,7 @@ router.get('/', authorizeRole(['Administrator']), async (req, res) => {
 });
 
 // Create new user (Admins only)
-router.post('/', authorizeRole(['Administrator']), async (req, res) => {
+router.post('/', authorizeRole(['Administrator', 'All']), async (req, res) => {
     const { username, password, role, email } = req.body;
 
     if (!username || !role || !email) {
@@ -95,12 +94,13 @@ router.put('/:id', async (req, res) => {
     const { role, password, username, email } = req.body;
 
     // Authorization Check: Admin or Self
-    if (req.user.role !== 'Administrator' && req.user.id !== id) {
+    const isAdmin = ['Administrator', 'All'].includes(req.user.role);
+    if (!isAdmin && req.user.id !== id) {
         return res.status(403).json({ error: 'Access denied' });
     }
 
     // Only Admin can change roles
-    if (role && req.user.role !== 'Administrator') {
+    if (role && !isAdmin) {
         return res.status(403).json({ error: 'Only Administrators can change roles' });
     }
 
@@ -170,7 +170,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete user (Admins only)
-router.delete('/:id', authorizeRole(['Administrator']), async (req, res) => {
+router.delete('/:id', authorizeRole(['Administrator', 'All']), async (req, res) => {
     const { id } = req.params;
 
     if (id === req.user.id) {
@@ -228,7 +228,8 @@ router.post('/:id/photo', (req, res, next) => {
     const { id } = req.params;
 
     // Authorization Check: Admin or Self
-    if (req.user.role !== 'Administrator' && req.user.id !== id) {
+    const isAdmin = ['Administrator', 'All'].includes(req.user.role);
+    if (!isAdmin && req.user.id !== id) {
         return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -268,7 +269,8 @@ router.delete('/:id/photo', async (req, res) => {
     const { id } = req.params;
 
     // Authorization Check: Admin or Self
-    if (req.user.role !== 'Administrator' && req.user.id !== id) {
+    const isAdmin = ['Administrator', 'All'].includes(req.user.role);
+    if (!isAdmin && req.user.id !== id) {
         return res.status(403).json({ error: 'Access denied' });
     }
 
