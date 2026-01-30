@@ -130,13 +130,15 @@ const DeliveryNotes: React.FC = () => {
             await deliveryNotesAPI.update(selectedNote.id, formData);
 
             // Refresh
+            // Refresh
             const updated = await deliveryNotesAPI.getById(selectedNote.id);
-            setSelectedNote(updated.data);
-            // Also update list
+
+            // Update list
             setDeliveryNotes(prev => prev.map(n => n.id === updated.data.id ? updated.data : n));
 
-            alert('Details updated successfully');
+            setSelectedNote(null); // Close modal
             setFileToUpload(null);
+            alert('Delivery is completed');
         } catch (e) {
             console.error(e);
             alert('Failed to update details');
@@ -567,6 +569,7 @@ const DeliveryNotes: React.FC = () => {
             </div>
         </div >
     );
+
 
 
     const renderDocumentView = () => {
