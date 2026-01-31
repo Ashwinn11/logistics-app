@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
-import { analyticsAPI, shipmentsAPI, notificationsAPI } from '../services/api';
+import { analyticsAPI, shipmentsAPI } from '../services/api';
 import {
 
     Clock,
@@ -11,12 +11,10 @@ import {
     Users,
     ScrollText,
     User,
-    Bell,
     UserSearch,
     CreditCard,
     Calendar,
-    FileText,
-    X
+    FileText
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -29,15 +27,16 @@ const Dashboard: React.FC = () => {
     const [data, setData] = useState<any>(null);
     // const [originalData, setOriginalData] = useState<any>(null);
     const [viewingAll, setViewingAll] = useState(false);
-    const [notifications, setNotifications] = useState<any[]>([]);
-    const [showNotifications, setShowNotifications] = useState(false);
-    const [unreadCount, setUnreadCount] = useState(0);
+    // const [notifications, setNotifications] = useState<any[]>([]);
+    // const [showNotifications, setShowNotifications] = useState(false);
+    // const [unreadCount, setUnreadCount] = useState(0);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 // Fetch Analytics
                 const response = await analyticsAPI.getDashboard();
+
 
                 // Fetch All Shipments for "Recent" list (Last 24h)
                 const shipmentsRes = await shipmentsAPI.getAll({ status: 'All' });
@@ -66,9 +65,11 @@ const Dashboard: React.FC = () => {
 
                 setData({ ...response.data, recentShipments: normalized });
 
+                /* 
                 const notifResponse = await notificationsAPI.getAll();
                 setNotifications(notifResponse.data);
                 setUnreadCount(notifResponse.data.filter((n: any) => !n.is_read).length);
+                */
             } catch (error) {
                 console.error('Error fetching dashboard data:', error);
             } finally {
@@ -182,133 +183,7 @@ const Dashboard: React.FC = () => {
                             <p className="text-gray-600 mt-1">Welcome back <span className="font-semibold text-indigo-600">{user?.username}</span>! Here's what's happening today.</p>
                         </div>
                     </div>
-                    {/* Notifications */}
-                    <div className="relative">
-                        <button
-                            onClick={() => setShowNotifications(!showNotifications)}
-                            className="p-2 rounded-lg hover:bg-white hover:shadow-sm transition-all relative group"
-                        >
-                            <Bell className={`w-6 h-6 transition-colors ${showNotifications ? 'text-indigo-600' : 'text-gray-400 group-hover:text-indigo-600'}`} />
-                            {unreadCount > 0 && (
-                                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-gray-50"></span>
-                            )}
-                        </button>
 
-                        {/* Notification Drawer */}
-                        {showNotifications && (
-                            <>
-                                {/* Backdrop */}
-                                <div
-                                    className="fixed inset-0 bg-black/30 z-40 backdrop-blur-sm transition-opacity"
-                                    onClick={() => setShowNotifications(false)}
-                                ></div>
-
-                                {/* Drawer */}
-                                <div className="fixed top-0 right-0 h-full w-96 bg-white shadow-2xl z-50 transform transition-transform animate-in slide-in-from-right duration-300 flex flex-col border-l border-gray-100">
-                                    <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                                        <div className="flex items-center gap-2">
-                                            <Bell className="w-5 h-5 text-indigo-600" />
-                                            <span className="font-bold text-gray-900 text-lg">Notifications</span>
-                                            {unreadCount > 0 && (
-                                                <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-600 text-xs font-bold border border-red-200">
-                                                    {unreadCount} New
-                                                </span>
-                                            )}
-                                        </div>
-                                        <button
-                                            onClick={() => setShowNotifications(false)}
-                                            className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
-                                        >
-                                            <X className="w-5 h-5" />
-                                        </button>
-                                    </div>
-
-                                    {/* Actions Bar */}
-                                    {notifications.length > 0 && (
-                                        <div className="px-5 py-3 border-b border-gray-100 flex justify-end">
-                                            <button
-                                                onClick={async (e) => {
-                                                    e.stopPropagation();
-                                                    await notificationsAPI.markAllRead();
-                                                    setNotifications(notifications.map(n => ({ ...n, is_read: true })));
-                                                    setUnreadCount(0);
-                                                }}
-                                                className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
-                                            >
-                                                <CheckCircle className="w-3 h-3" />
-                                                Mark all as read
-                                            </button>
-                                        </div>
-                                    )}
-
-                                    {/* List */}
-                                    <div className="flex-1 overflow-y-auto p-0">
-                                        {notifications.length === 0 ? (
-                                            <div className="flex flex-col items-center justify-center h-64 text-center p-6 text-gray-400">
-                                                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                                                    <Bell className="w-8 h-8 text-gray-300" />
-                                                </div>
-                                                <p className="font-medium text-gray-900">All caught up!</p>
-                                                <p className="text-sm mt-1">No new notifications for now.</p>
-                                            </div>
-                                        ) : (
-                                            <div className="divide-y divide-gray-50">
-                                                {notifications.map((notif: any) => (
-                                                    <div
-                                                        key={notif.id}
-                                                        className={`p-5 hover:bg-gray-50 transition-colors relative group ${!notif.is_read ? 'bg-indigo-50/40' : ''}`}
-                                                    >
-                                                        {!notif.is_read && (
-                                                            <span className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 rounded-r"></span>
-                                                        )}
-                                                        <div className="flex gap-4">
-                                                            {/* Icon Placeholder based on context or generic */}
-                                                            <div className={`mt-1 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${!notif.is_read ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-500'}`}>
-                                                                <Bell className="w-4 h-4" />
-                                                            </div>
-
-                                                            <div className="flex-1 min-w-0">
-                                                                {/* Admin: Show User Context */}
-                                                                {notif.user_name && ['Administrator', 'All'].includes(user?.role || '') && (
-                                                                    <div className="flex items-center gap-2 mb-1">
-                                                                        <span className="text-xs font-bold text-gray-700 bg-gray-200 px-1.5 py-0.5 rounded border border-gray-300">
-                                                                            {notif.user_name}
-                                                                        </span>
-                                                                        <span className="text-[10px] text-gray-400 uppercase tracking-wider">
-                                                                            {notif.user_role}
-                                                                        </span>
-                                                                    </div>
-                                                                )}
-
-                                                                <p className="text-sm font-semibold text-gray-900 leading-snug">{notif.title}</p>
-                                                                <p className="text-sm text-gray-600 mt-1 leading-relaxed">{notif.message}</p>
-
-                                                                <div className="flex items-center justify-between mt-3">
-                                                                    <span className="text-xs text-gray-400 flex items-center gap-1">
-                                                                        <Clock className="w-3 h-3" />
-                                                                        {new Date(notif.created_at).toLocaleString()}
-                                                                    </span>
-                                                                    {notif.link && (
-                                                                        <Link
-                                                                            to={notif.link}
-                                                                            onClick={() => setShowNotifications(false)}
-                                                                            className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:underline"
-                                                                        >
-                                                                            View
-                                                                        </Link>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </>
-                        )}
-                    </div>
                 </div>
 
                 {/* Stats Grid */}
