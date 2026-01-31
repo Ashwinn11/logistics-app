@@ -773,7 +773,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
 });
 
 // Delete shipment
-router.delete('/:id', authenticateToken, authorizeRole(['Administrator', 'Clearance Manager', 'Accountant']), async (req, res) => {
+router.delete('/:id', authenticateToken, authorizeRole(['Administrator', 'All']), async (req, res) => {
     try {
         const { id } = req.params;
 
